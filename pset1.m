@@ -119,37 +119,37 @@ for i=1:N_unpert
     errors_RTN(i, :) = [error_pos' error_vel'];
 end
 
-% figure
-% surf(X * R_E, Y * R_E, Z * R_E)
-% hold on
-% plot3(y_unpert_Kep(1:end, 1), y_unpert_Kep(1:end, 2), y_unpert_Kep(1:end, 3))
-% plot3(y_unpert(1:end, 1), y_unpert(1:end, 2), y_unpert(1:end, 3))
-% axis equal
-% grid on
-% hold off
-% 
-% figure
-% hold on
-% plot(t_unpert, errors_RTN(:, 1))
-% plot(t_unpert, errors_RTN(:, 2))
-% plot(t_unpert, errors_RTN(:, 3))
-% hold off
-% grid on
-% title('Time evolution of the error in absolute position between numerical integration and analytical propagation in the RTN frame')
-% legend('x', 'y', 'z')
-% 
-% figure
-% hold on
-% plot(t_unpert, errors_RTN(:, 4))
-% plot(t_unpert, errors_RTN(:, 5))
-% plot(t_unpert, errors_RTN(:, 6))
-% hold off
-% grid on
-% title('Time evolution of the error in absolute velocity between numerical integration and analytical propagation in the RTN frame')
-% legend('x', 'y', 'z')
+figure
+surf(X * R_E, Y * R_E, Z * R_E)
+hold on
+plot3(y_unpert_Kep(1:end, 1), y_unpert_Kep(1:end, 2), y_unpert_Kep(1:end, 3))
+plot3(y_unpert(1:end, 1), y_unpert(1:end, 2), y_unpert(1:end, 3))
+axis equal
+grid on
+hold off
 
-% figure
-% plot(t_unpert, true_anom_unpert)
+figure
+hold on
+plot(t_unpert, errors_RTN(:, 1))
+plot(t_unpert, errors_RTN(:, 2))
+plot(t_unpert, errors_RTN(:, 3))
+hold off
+grid on
+title('Time evolution of the error in absolute position between numerical integration and analytical propagation in the RTN frame')
+legend('x', 'y', 'z')
+
+figure
+hold on
+plot(t_unpert, errors_RTN(:, 4))
+plot(t_unpert, errors_RTN(:, 5))
+plot(t_unpert, errors_RTN(:, 6))
+hold off
+grid on
+title('Time evolution of the error in absolute velocity between numerical integration and analytical propagation in the RTN frame')
+legend('x', 'y', 'z')
+
+figure
+plot(t_unpert, true_anom_unpert)
 
 %% Part e: Computing quantities throughout the orbit (un)perturbed
 Kep_ele_unpert = zeros(N_unpert, 6);
@@ -223,48 +223,48 @@ for i=1:N_pert
     spec_energy_pert(i) = norm(vel)^2 / 2 - mu / norm(pos);
 end
 
-% figure
-% hold on
-% plot(t_pert, ecc_vec_pert(:,1))
-% plot(t_pert, ecc_vec_pert(:,2))
-% plot(t_pert, ecc_vec_pert(:,3))
-% hold off
-% grid on
-% title('Time variation of the eccentricity vector components for the perturbed propagation')
-% 
-% figure
-% hold on
-% plot(t_pert, ang_mom_pert(:,1))
-% plot(t_pert, ang_mom_pert(:,2))
-% plot(t_pert, ang_mom_pert(:,3))
-% hold off
-% grid on
-% title('Time variation of the angular momentum vector components for the perturbed propagation')
-% 
-% figure
-% plot(t_pert, spec_energy_pert)
-% grid on
-% title('Time variation of the specific mechanical energy for the perturbed propagation')
-% 
-% figure
-% plot(t_pert, Kep_ele_pert(:, 1))
-% grid on
-% title('Time variation of the semi-major axis for the perturbed propagation')
-% 
-% figure
-% plot(t_pert, Kep_ele_pert(:, 2))
-% grid on
-% title('Time variation of the eccentricity for the perturbed propagation')
-% 
-% figure
-% hold on
-% plot(t_pert, Kep_ele_pert(:, 3:end))
-% hold off
-% grid on
-% legend('Inclination', 'Argument of periapsis', 'RAAN', 'Mean anomaly')
-% title('Time variation of the inclination, argument of periapsis, RAAN and mean anomaly for the perturbed propagation')
+figure
+hold on
+plot(t_pert, ecc_vec_pert(:,1))
+plot(t_pert, ecc_vec_pert(:,2))
+plot(t_pert, ecc_vec_pert(:,3))
+hold off
+grid on
+title('Time variation of the eccentricity vector components for the perturbed propagation')
 
-%% Part e: GVE with J2 effects
+figure
+hold on
+plot(t_pert, ang_mom_pert(:,1))
+plot(t_pert, ang_mom_pert(:,2))
+plot(t_pert, ang_mom_pert(:,3))
+hold off
+grid on
+title('Time variation of the angular momentum vector components for the perturbed propagation')
+
+figure
+plot(t_pert, spec_energy_pert)
+grid on
+title('Time variation of the specific mechanical energy for the perturbed propagation')
+
+figure
+plot(t_pert, Kep_ele_pert(:, 1))
+grid on
+title('Time variation of the semi-major axis for the perturbed propagation')
+
+figure
+plot(t_pert, Kep_ele_pert(:, 2))
+grid on
+title('Time variation of the eccentricity for the perturbed propagation')
+
+figure
+hold on
+plot(t_pert, Kep_ele_pert(:, 3:end))
+hold off
+grid on
+legend('Inclination', 'Argument of periapsis', 'RAAN', 'Mean anomaly')
+title('Time variation of the inclination, argument of periapsis, RAAN and mean anomaly for the perturbed propagation')
+
+%% Part f: GVE with J2 effects
 init_OE = [a e * cos(omega) e * sin(omega) inc RAAN omega + true_anom];
 tspan = linspace(0, 10 * T, N_pert);
 [t_pert_OE, y_pert_OE] = ode89(@(t, state) GVEderJ2(t, state, mu, J2, R_E), tspan, init_OE, options);
@@ -291,7 +291,61 @@ for i=1:N_pert
     ang_mom_pert_GVE(i, :) = cross(pos, vel);
     spec_energy_pert_GVE(i) = - mu / (2 * y_pert_OE(i, 1));
     % eccentricity vector in ECI
+    ecc_vec_pert_GVE(i, :) = cross(vel, cross(pos, vel)) / mu - pos / norm(pos);
 end
+
+figure
+plot(t_pert_OE, y_pert_OE(:, 1))
+grid on
+title('Semi-major axis')
+
+figure
+plot(t_pert_OE, y_pert_OE(:, 4))
+grid on
+title('Inclination')
+
+figure
+plot(t_pert_OE, y_pert_OE(:, 5))
+grid on
+title('RAAN')
+
+figure
+plot(t_pert_OE, omega_pert_GVE)
+grid on
+title('Argument of periapsis')
+
+figure
+plot(t_pert_OE, ecc_pert_GVE)
+grid on
+title('Eccentricity')
+
+figure
+plot(t_pert_OE, mean_anom_GVE)
+grid on
+title('Mean anomaly')
+
+figure
+hold on
+plot(t_pert_OE, ang_mom_pert_GVE(:, 1))
+plot(t_pert_OE, ang_mom_pert_GVE(:, 2))
+plot(t_pert_OE, ang_mom_pert_GVE(:, 3))
+hold off
+title('Angular momentum')
+legend('x','y','z')
+
+figure
+hold on
+plot(t_pert_OE, ecc_vec_pert_GVE(:, 1))
+plot(t_pert_OE, ecc_vec_pert_GVE(:, 2))
+plot(t_pert_OE, ecc_vec_pert_GVE(:, 3))
+hold off
+title('Eccentricity vector')
+legend('x', 'y', 'z')
+
+figure
+plot(t_pert_OE, spec_energy_pert_GVE)
+grid on
+title('Specific mechanical energy')
 
 %% Functions
 function statedot = state_der_posvel(t, state, mu)
