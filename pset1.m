@@ -6,11 +6,11 @@ J2 = 0.108263e-2;
 
 %% Part a: Orbital elements
 % Change it to the actual values from the chosen mission
-a = R_E + 1000; % km, semi-major axis
-e = 2.09e-2; % eccentricity
-inc = deg2rad(64.6); % inclination
-omega = 0; % argument of periapsis
-RAAN = deg2rad(90); % right ascension of the ascending node
+a = 36943; % km, semi-major axis
+e = 0.8111; % eccentricity
+inc = deg2rad(59); % inclination
+omega = deg2rad(188); % argument of periapsis
+RAAN = deg2rad(84); % right ascension of the ascending node
 true_anom = 0; % true anomaly
 
 %% Part b: Initial position and velocity in inertial frame
