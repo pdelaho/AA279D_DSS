@@ -169,8 +169,8 @@ spec_energy_unpert = zeros(N_unpert, 1);
 for i=1:N_unpert
     pos = y_unpert(i, 1:3);
     vel = y_unpert(i, 4:6);
-    [a, e, inc, omega, RAAN, M] = Keplerian_elements(y_unpert(i,:), mu);
-    Kep_ele_unpert(i, :) = [a, e, inc, omega, RAAN, M]';
+    [a_unpert, e_unpert, inc_unpert, omega_unpert, RAAN_unpert, M_unpert] = Keplerian_elements(y_unpert(i,:), mu);
+    Kep_ele_unpert(i, :) = [a_unpert, e_unpert, inc_unpert, omega_unpert, RAAN_unpert, M_unpert]';
     ecc_vec_unpert(i, :) = cross(vel, cross(pos, vel)) / mu - pos / norm(pos);
     % Or should we keep it in the perifocal coordinate?
     ang_mom_unpert(i, :) = cross(pos, vel);
@@ -241,65 +241,67 @@ spec_energy_pert = zeros(N_pert, 1);
 for i=1:N_pert
     pos = y_pert(i, 1:3);
     vel = y_pert(i, 4:6);
-    [a, e, inc, omega, RAAN, M] = Keplerian_elements(y_pert(i,:), mu);
-    Kep_ele_pert(i, :) = [a, e, inc, omega, RAAN, M]';
+    [a_pert, e_pert, inc_pert, omega_pert, RAAN_pert, M_pert] = Keplerian_elements(y_pert(i,:), mu);
+    Kep_ele_pert(i, :) = [a_pert, e_pert, inc_pert, omega_pert, RAAN_pert, M_pert]';
     ecc_vec_pert(i, :) = cross(vel, cross(pos, vel)) / mu - pos / norm(pos);
     ang_mom_pert(i, :) = cross(pos, vel);
     spec_energy_pert(i) = norm(vel)^2 / 2 - mu / norm(pos);
 end
 
-figure
-hold on
-plot(t_pert / 3600, ecc_vec_pert(:,1))
-plot(t_pert / 3600, ecc_vec_pert(:,2))
-plot(t_pert / 3600, ecc_vec_pert(:,3))
-hold off
-grid on
-xlabel('Time [hours]')
-
-title('Time variation of the eccentricity vector components for the perturbed propagation')
-
-figure
-hold on
-plot(t_pert / 3600, ang_mom_pert(:,1))
-plot(t_pert / 3600, ang_mom_pert(:,2))
-plot(t_pert / 3600, ang_mom_pert(:,3))
-hold off
-grid on
-xlabel('Time [hours]')
-
-title('Time variation of the angular momentum vector components for the perturbed propagation')
-
-figure
-plot(t_pert / 3600, spec_energy_pert)
-grid on
-xlabel('Time [hours]')
-
-title('Time variation of the specific mechanical energy for the perturbed propagation')
-
-figure
-plot(t_pert / 3600, Kep_ele_pert(:, 1))
-grid on
-xlabel('Time [hours]')
-
-title('Time variation of the semi-major axis for the perturbed propagation')
-
-figure
-plot(t_pert / 3600, Kep_ele_pert(:, 2))
-grid on
-xlabel('Time [hours]')
-
-title('Time variation of the eccentricity for the perturbed propagation')
-
-figure
-hold on
-plot(t_pert / 3600, Kep_ele_pert(:, 3:end))
-hold off
-grid on
-xlabel('Time [hours]')
-
-legend('Inclination', 'Argument of periapsis', 'RAAN', 'Mean anomaly')
-title('Time variation of the inclination, argument of periapsis, RAAN and mean anomaly for the perturbed propagation')
+% figure
+% hold on
+% plot(t_pert / 3600, ecc_vec_pert(:,1))
+% plot(t_pert / 3600, ecc_vec_pert(:,2))
+% plot(t_pert / 3600, ecc_vec_pert(:,3))
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Components of the eccentricity vector [-]')
+% legend('X-axis', 'Y-axis', 'Z-axis')
+% title('Time variation of the eccentricity vector components in ECI for the perturbed propagation')
+% 
+% figure
+% hold on
+% plot(t_pert / 3600, ang_mom_pert(:,1))
+% plot(t_pert / 3600, ang_mom_pert(:,2))
+% plot(t_pert / 3600, ang_mom_pert(:,3))
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Components of the angular momentum vector [km^2/s]')
+% legend('X-axis', 'Y-axis', 'Z-axis')
+% title('Time variation of the angular momentum vector components in ECI for the perturbed propagation')
+% 
+% figure
+% plot(t_pert / 3600, spec_energy_pert)
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Specific mechanical energy [km^2/s^2]')
+% title('Time variation of the specific mechanical energy for the perturbed propagation')
+% 
+% figure
+% plot(t_pert / 3600, Kep_ele_pert(:, 1))
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Semi-major axis [km]')
+% title('Time variation of the semi-major axis for the perturbed propagation')
+% 
+% figure
+% plot(t_pert / 3600, Kep_ele_pert(:, 2))
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Eccentricity [-]')
+% title('Time variation of the eccentricity for the perturbed propagation')
+% 
+% figure
+% hold on
+% plot(t_pert / 3600, Kep_ele_pert(:, 3:end))
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Angular orbital elements [rad]')
+% legend('Inclination', 'Argument of periapsis', 'RAAN', 'Mean anomaly')
+% title('Time variation of the inclination, argument of periapsis, RAAN and mean anomaly for the perturbed propagation')
 
 %% Part f: GVE with J2 effects
 OE = [a * 1e3, e, inc, RAAN, omega, true_anom];
@@ -311,9 +313,11 @@ RAAN_mean = init_OE(4);
 omega_mean = init_OE(5);
 M_mean = init_OE(6);
 
+init_nonmodified_OE = [a e * cos(omega) e * sin(omega) inc RAAN omega + true_anom];
 init_modified_OE = [a_mean e_mean * cos(omega_mean) e_mean * sin(omega_mean) inc_mean RAAN_mean omega_mean + true_anom];
 tspan = linspace(0, 10 * T, N_pert);
 [t_pert_OE, y_pert_OE] = ode89(@(t, state) GVEderJ2(t, state, mu, J2, R_E), tspan, init_modified_OE, options);
+[t_pert_nonmodified_OE, y_pert_nonmodified_OE] = ode89(@(t, state) GVEderJ2(t, state, mu, J2, R_E), tspan, init_nonmodified_OE, options);
 
 ecc_pert_GVE = zeros(N_pert, 1);
 ecc_vec_pert_GVE = zeros(N_pert, 3);
@@ -321,6 +325,13 @@ omega_pert_GVE = zeros(N_pert, 1);
 mean_anom_GVE = zeros(N_pert, 1);
 ang_mom_pert_GVE = zeros(N_pert, 3);
 spec_energy_pert_GVE = zeros(N_pert, 1);
+
+ecc_pert_nonmodified_GVE = zeros(N_pert, 1);
+ecc_vec_pert_nonmodified_GVE = zeros(N_pert, 3);
+omega_pert_nonmodified_GVE = zeros(N_pert, 1);
+mean_anom_nonmodified_GVE = zeros(N_pert, 1);
+ang_mom_pert_nonmodified_GVE = zeros(N_pert, 3);
+spec_energy_pert_nonmodified_GVE = zeros(N_pert, 1);
 
 for i=1:N_pert
     ecc = sqrt(y_pert_OE(i, 2)^2 + y_pert_OE(i, 3)^2);
@@ -332,65 +343,186 @@ for i=1:N_pert
     sinE = sin(true_anom_pert) * sqrt(1 - ecc^2) / (1 + ecc * cos(true_anom_pert));
     E = atan2(sinE, cosE);
     M = E - ecc * sinE;
-    mean_anom_GVE(i) = M;
+    mean_anom_GVE(i) = wrapTo2Pi(M);
     [pos, vel] = OEtoECI(y_pert_OE(i, 1), ecc, y_pert_OE(i, 4), omega_pert, y_pert_OE(i, 5), true_anom_pert, mu);
     ang_mom_pert_GVE(i, :) = cross(pos, vel);
     spec_energy_pert_GVE(i) = - mu / (2 * y_pert_OE(i, 1));
     % eccentricity vector in ECI
     ecc_vec_pert_GVE(i, :) = cross(vel, cross(pos, vel)) / mu - pos / norm(pos);
+
+    ecc = sqrt(y_pert_nonmodified_OE(i, 2)^2 + y_pert_nonmodified_OE(i, 3)^2);
+    ecc_pert_nonmodified_GVE(i) = ecc;
+    omega_pert = atan2(y_pert_nonmodified_OE(i, 3), y_pert_nonmodified_OE(i, 2));
+    omega_pert_nonmodified_GVE(i) = omega_pert;
+    true_anom_pert = y_pert_nonmodified_OE(i, 6) - omega_pert;
+    cosE = (ecc + cos(true_anom_pert)) / (1 + ecc * cos(true_anom_pert));
+    sinE = sin(true_anom_pert) * sqrt(1 - ecc^2) / (1 + ecc * cos(true_anom_pert));
+    E = atan2(sinE, cosE);
+    M = E - ecc * sinE;
+    mean_anom_nonmodified_GVE(i) = wrapTo2Pi(M);
+    [pos, vel] = OEtoECI(y_pert_nonmodified_OE(i, 1), ecc, y_pert_nonmodified_OE(i, 4), omega_pert, y_pert_nonmodified_OE(i, 5), true_anom_pert, mu);
+    ang_mom_pert_nonmodified_GVE(i, :) = cross(pos, vel);
+    spec_energy_pert_nonmodified_GVE(i) = - mu / (2 * y_pert_nonmodified_OE(i, 1));
+    % eccentricity vector in ECI
+    ecc_vec_pert_nonmodified_GVE(i, :) = cross(vel, cross(pos, vel)) / mu - pos / norm(pos);
 end
 
 % figure
-% plot(t_pert_OE, y_pert_OE(:, 1))
+% hold on
+% plot(t_pert_OE / 3600, y_pert_OE(:, 1))
+% plot(t_pert_OE / 3600, Kep_ele_pert(:, 1))
+% plot(t_pert_OE / 3600, y_pert_nonmodified_OE(:, 1))
+% hold off
 % grid on
-% title('Semi-major axis')
-% 
-% figure
-% plot(t_pert_OE, y_pert_OE(:, 4))
-% grid on
-% title('Inclination')
-% 
-% figure
-% plot(t_pert_OE, y_pert_OE(:, 5))
-% grid on
-% title('RAAN')
-% 
-% figure
-% plot(t_pert_OE, omega_pert_GVE)
-% grid on
-% title('Argument of periapsis')
-% 
-% figure
-% plot(t_pert_OE, ecc_pert_GVE)
-% grid on
-% title('Eccentricity')
-% 
-% figure
-% plot(t_pert_OE, mean_anom_GVE)
-% grid on
-% title('Mean anomaly')
+% xlabel('Time [hours]')
+% ylabel('Semi-major axis [km]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the semi-major axis')
 % 
 % figure
 % hold on
-% plot(t_pert_OE, ang_mom_pert_GVE(:, 1))
-% plot(t_pert_OE, ang_mom_pert_GVE(:, 2))
-% plot(t_pert_OE, ang_mom_pert_GVE(:, 3))
+% plot(t_pert_OE / 3600, y_pert_OE(:, 4))
+% plot(t_pert_OE / 3600, Kep_ele_pert(:, 3))
+% plot(t_pert_OE / 3600, y_pert_nonmodified_OE(:, 4))
 % hold off
-% title('Angular momentum')
-% legend('x','y','z')
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Inclination [rad]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the inclination')
 % 
 % figure
 % hold on
-% plot(t_pert_OE, ecc_vec_pert_GVE(:, 1))
-% plot(t_pert_OE, ecc_vec_pert_GVE(:, 2))
-% plot(t_pert_OE, ecc_vec_pert_GVE(:, 3))
+% plot(t_pert_OE / 3600, y_pert_OE(:, 5))
+% plot(t_pert_OE / 3600, Kep_ele_pert(:, 5))
+% plot(t_pert_OE / 3600, y_pert_nonmodified_OE(:, 5))
 % hold off
-% title('Eccentricity vector')
-% legend('x', 'y', 'z')
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Right Ascension of the ascending node [rad]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the RAAN')
 % 
 % figure
-% plot(t_pert_OE, spec_energy_pert_GVE)
+% hold on
+% plot(t_pert_OE / 3600, wrapToPi(omega_pert_GVE))
+% plot(t_pert_OE / 3600, wrapToPi(Kep_ele_pert(:, 4)))
+% plot(t_pert_OE /3600, wrapToPi(omega_pert_nonmodified_GVE))
+% hold off
 % grid on
+% xlabel('Time [hours]')
+% ylabel('Argument of periapsis [rad]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation fo the argument of periapsis')
+% 
+% figure
+% hold on
+% plot(t_pert_OE / 3600, ecc_pert_GVE)
+% plot(t_pert_OE / 3600, Kep_ele_pert(:, 2))
+% plot(t_pert_OE / 3600, ecc_pert_nonmodified_GVE)
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Eccentricity [-]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the eccentricity')
+% % Comparison of the mean and osculating eccentricities over time
+% 
+% % there is an issue with the mean anomaly of non modified
+% figure
+% hold on
+% plot(t_pert_OE / 3600, mean_anom_GVE)
+% plot(t_pert_OE / 3600, Kep_ele_pert(:, 6))
+% plot(t_pert_OE / 3600, mean_anom_nonmodified_GVE)
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Mean anomaly [rad]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the mean anomaly')
+% 
+% figure
+% hold on
+% plot(t_pert_OE / 3600, ang_mom_pert_GVE(:, 1))
+% plot(t_pert_OE / 3600, ang_mom_pert(:, 1))
+% plot(t_pert_OE / 3600, ang_mom_pert_nonmodified_GVE(:, 1))
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('X-component of the angular momentum vector [km^2/s]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the x-component of the angular momentum vector in ECI')
+% 
+% figure
+% hold on
+% plot(t_pert_OE / 3600, ang_mom_pert_GVE(:, 2))
+% plot(t_pert_OE / 3600, ang_mom_pert(:, 2))
+% plot(t_pert_OE / 3600, ang_mom_pert_nonmodified_GVE(:, 2))
+% grid on
+% hold off
+% xlabel('Time [hours]')
+% ylabel('Y-component of the angular momentum vector [km^2/s]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the y-component of the angular momentum vector in ECI')
+% 
+% figure
+% hold on
+% plot(t_pert_OE / 3600, ang_mom_pert_GVE(:, 3))
+% plot(t_pert_OE / 3600, ang_mom_pert(:, 3))
+% plot(t_pert_OE / 3600, ang_mom_pert_nonmodified_GVE(:, 3))
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Z-component of the angular momentum vector [km^2/s]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the z-component of the angular momentum vector in ECI')
+% 
+% figure
+% hold on
+% plot(t_pert_OE / 3600, ecc_vec_pert_GVE(:, 1))
+% plot(t_pert_OE / 3600, ecc_vec_pert(:, 1))
+% plot(t_pert_OE / 3600, ecc_vec_pert_nonmodified_GVE(:, 1))
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('X-component of the eccentricity vector [-]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the x-component of the eccentricity vector in ECI')
+% 
+% figure
+% hold on
+% plot(t_pert_OE / 3600, ecc_vec_pert_GVE(:, 2))
+% plot(t_pert_OE / 3600, ecc_vec_pert(:, 2))
+% plot(t_pert_OE / 3600, ecc_vec_pert_nonmodified_GVE(:, 2))
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Y-component of the eccentricity vector [-]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the y-component of the eccentricity vector in ECI')
+% 
+% figure
+% hold on
+% plot(t_pert_OE / 3600, ecc_vec_pert_GVE(:, 3))
+% plot(t_pert_OE / 3600, ecc_vec_pert(:, 3))
+% plot(t_pert_OE / 3600, ecc_vec_pert_nonmodified_GVE(:, 3))
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Z-component of the eccentricity vector [-]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
+% title('Time variation of the z-component of the eccentricity vector in ECI')
+% 
+% figure
+% hold on
+% plot(t_pert_OE / 3600, spec_energy_pert_GVE)
+% plot(t_pert_OE / 3600, spec_energy_pert)
+% plot(t_pert_OE / 3600, spec_energy_pert_nonmodified_GVE)
+% hold off
+% grid on
+% xlabel('Time [hours]')
+% ylabel('Specific mechanical energy [km^2/s^2]')
+% legend('Mean', 'Osculating', 'Mean initialized at the osculating')
 % title('Specific mechanical energy')
 
 %% Functions
@@ -421,9 +553,9 @@ function [a, e, i, omega, RAAN, M] = Keplerian_elements(state, mu)
     e = sqrt(1 - p / a);
     E = atan2((dot(pos, vel) / (a^2 * n)), (1 - norm(pos)/a));
     nu = 2 * atan(sqrt((1 + e) / (1 - e)) * tan(E / 2));
-    M = E - e * sin(E);
+    M = wrapTo2Pi(E - e * sin(E));
     u = atan2((pos(3) / sin(i)), (pos(1) * cos(RAAN) + pos(2) * sin(RAAN)));
-    omega = u - nu;
+    omega = wrapTo2Pi(u - nu);
 end
 
 function E = eccentric_anom(M, e, epsilon)
@@ -472,5 +604,5 @@ function statedot = GVEderJ2(t, state, mu, J2, R_E)
     statedot(2) = - 3 / 4 * n * J2 * (R_E / (a * (1 - ex^2 - ey^2)))^2 * ey * (5 * cos(i)^2 - 1);
     statedot(3) = 3 / 4 * n * J2 * (R_E / (a * (1 - ex^2 - ey^2)))^2 * ex * (5 * cos(i)^2 - 1);
     statedot(5) = - 3 / 2 * n * J2 * (R_E / (a * (1 - ex^2 - ey^2)))^2 * cos(i);
-    statedot(6) = 3 / 4 * n * J2 * (R_E / (a * (1 - ex^2 - ey^2)))^2 *(sqrt(1 - ex^2 - ey^2) * (3 * cos(i)^2 - 1) + 5 * cos(i)^2 - 1);
+    statedot(6) = 3 / 4 * n * J2 * (R_E / (a * (1 - ex^2 - ey^2)))^2 *(sqrt(1 - ex^2 - ey^2) * (3 * cos(i)^2 - 1) + 5 * cos(i)^2 - 1) + n;
 end
