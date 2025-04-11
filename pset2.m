@@ -20,9 +20,12 @@ T = 2 * pi * sqrt(a_c^3 / mu);
 delta_a = 0;
 delta_e = 0;
 delta_i = deg2rad(0.1) * a_c;
+% delta_i = 0;
 delta_omega = deg2rad(0.05) * a_c;
+% delta_omega = 0;
 delta_RAAN = 0;
 delta_nu = deg2rad(-0.016) * a_c;
+% delta_nu = 0;
 
 a_d = a_c + delta_a;
 e_d = e_c + delta_e / a_c;
@@ -34,13 +37,14 @@ nu_d = nu_c + delta_nu / a_c;
 %% Part b: Numerical integration of NERM
 
 [pos_c, vel_c] = OEtoECI(a_c, e_c, inc_c, omega_c, RAAN_c, nu_c, mu);
-[pos_d, vel_d] = OEtoECI(a_c, e_d, inc_d, omega_d, RAAN_d, nu_d, mu);
-
-init_cond = [pos_c, vel_c, pos_d - pos_c, vel_d - vel_c];
-options = odeset('RelTol', 1e-3, 'AbsTol', 1e-6, 'MaxStep', 100);
+[pos_d, vel_d] = OEtoECI(a_d, e_d, inc_d, omega_d, RAAN_d, nu_d, mu);
+rel_pos = pos_d - pos_c;
+rel_vel = vel_d - vel_c;
+init_cond_rel = [pos_c vel_c rel_pos rel_vel];
+options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9, 'MaxStep', 100);
 N = 10000;
 tspan = linspace(0, 10 * T, N);
-[t, y] = ode89(@(t, state) NERM(t, state, mu), tspan, init_cond, options);
+[t, y] = ode89(@(t, state) NERM(t, state, mu), tspan, init_cond_rel, options);
 
 relative_RTN = zeros(N, 6);
 
@@ -100,7 +104,78 @@ ylabel('N-component of velocity [km/s]')
 xlabel('Time [hours]')
 
 figure
-plot3(y(:, 7), y(:, 8), y(:, 9))
+plot3(relative_RTN(:, 1), relative_RTN(:, 2), relative_RTN(:, 3))
+axis equal
+grid on
+xlabel('R-axis [km]')
+ylabel('T-axis [km]')
+zlabel('N-axis [km]')
+title('Deputy orbit in RTN frame centered on chief')
+
+%% Part c: Numerical integration of FODE
+
+init_cond_abs = [pos_c, vel_c, pos_d', vel_d'];
+[t_abs, y_abs] = ode89(@(t, state) FODE_2sats(t, state, mu), tspan, init_cond_abs, options);
+
+fode_RTN = zeros(N, 6);
+
+for i=1:N
+    pos_c = y_abs(i, 1:3);
+    vel_c = y_abs(i, 4:6);
+    rho = y_abs(i, 7:9) - pos_c;
+    rho_dot = y_abs(i, 10:12) - vel_c;
+    [a, e, inc, omega, RAAN, nu] = Keplerian_elements(y_abs(i, 1:6), mu);
+
+    % Computing the RTN frame centered on the chief spacecraft
+    R_vec = pos_c / norm(pos_c);
+    N_vec = cross(pos_c, vel_c) / norm(cross(pos_c, vel_c));
+    T_vec = cross(N_vec, R_vec);
+    rot = [R_vec; T_vec; N_vec];
+    theta_dot = [0, 0, - sqrt(mu / (a^3 * (1 - e^2)^3)) * (1 + e * cos(nu))^2];
+    
+    % Transforming the position and velocities in the RTN frame
+    rho_RTN = rot * rho';
+    rho_dot_RTN = rot * rho_dot' + cross(theta_dot, rho_RTN)';
+
+    fode_RTN(i, 1:3) = rho_RTN;
+    fode_RTN(i, 4:6) = rho_dot_RTN;
+end
+
+figure
+subplot(3,2,1)
+plot(t_abs / 3600, fode_RTN(:, 1))
+grid on
+ylabel('R-component of position [km]')
+
+subplot(3,2,3)
+plot(t_abs / 3600, fode_RTN(:, 2))
+grid on
+ylabel('T-component of position [km]')
+
+subplot(3,2,5)
+plot(t_abs / 3600, fode_RTN(:, 3))
+grid on
+ylabel('N-component of position [km]')
+xlabel('Time [hours]')
+
+subplot(3,2,2)
+plot(t_abs / 3600, fode_RTN(:, 4))
+grid on
+ylabel('R-component of velocity [km/s]')
+
+subplot(3,2,4)
+plot(t_abs / 3600, fode_RTN(:, 5))
+grid on
+ylabel('T-component of velocity [km/s]')
+
+subplot(3,2,6)
+plot(t_abs / 3600, fode_RTN(:, 6))
+grid on
+ylabel('N-component of velocity [km/s]')
+xlabel('Time [hours]')
+
+figure
+plot3(fode_RTN(:, 1), fode_RTN(:, 2), fode_RTN(:, 3))
 axis equal
 grid on
 xlabel('R-axis [km]')
@@ -109,6 +184,7 @@ zlabel('N-axis [km]')
 title('Deputy orbit in RTN frame centered on chief')
 
 %% Functions
+
 function [pos_inertial, vel_inertial] = OEtoECI(a, e, inc, omega, RAAN, true_anom, mu)
     cosE = (e + cos(true_anom)) / (1 + e * cos(true_anom));
     sinE = sin(true_anom) * sqrt(1 - e^2) / (1 + e * cos(true_anom));
@@ -143,8 +219,20 @@ function statedot = NERM(t, state, mu)
     r0 = state(1:3);
     rho = state(7:9);
 
+    statedot(4:6) = - mu * r0 / (norm(r0))^3;
+    statedot(10:12) = - mu * (r0 + rho) / (norm(r0 + rho))^3 + mu * r0 / (norm(r0))^3;
+end
+
+function statedot = FODE_2sats(t, state, mu)
+    statedot = zeros(size(state));
+    statedot(1:3) = state(4:6);
+    statedot(7:9) = state(10:12);
+
+    r0 = state(1:3);
+    r1 = state(7:9);
+
     statedot(4:6) = - mu * r0 / norm(r0)^3;
-    statedot(10:12) = - mu * (r0 + rho) / norm(r0 + rho)^3 + mu * r0 / norm(r0)^3;
+    statedot(10:12) = - mu * r1 / norm(r1)^3;
 end
 
 function [a, e, i, omega, RAAN, nu] = Keplerian_elements(state, mu)
