@@ -183,6 +183,23 @@ ylabel('T-axis [km]')
 zlabel('N-axis [km]')
 title('Deputy orbit in RTN frame centered on chief')
 
+% Modeling the Earth
+[X, Y, Z] = sphere(10);
+
+figure
+hold on
+surf(X * R_E, Y * R_E, Z * R_E)
+plot3(y_abs(:, 1), y_abs(:, 2), y_abs(:, 3))
+plot3(y_abs(:, 7), y_abs(:, 8), y_abs(:, 9))
+axis equal
+grid on
+hold off
+legend('Earth', 'Chief orbit', 'Deputy orbit')
+xlabel('X-axis [km]')
+ylabel('Y-axis [km]')
+zlabel('Z-axis [km]')
+title('Chief and deputy orbits around the Earth in ECI frame')
+
 %% Functions
 
 function [pos_inertial, vel_inertial] = OEtoECI(a, e, inc, omega, RAAN, true_anom, mu)
