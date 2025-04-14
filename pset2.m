@@ -13,23 +13,25 @@ e_c = 0.8111; % eccentricity
 inc_c = deg2rad(59); % inclination
 omega_c = deg2rad(188); % argument of periapsis
 RAAN_c = deg2rad(84); % right ascension of the ascending node
-nu_c = 0; % true anomaly
+nu_c = deg2rad(0); % true anomaly
 T = 2 * pi * sqrt(a_c^3 / mu);
 
 % For the deputy
 % Write it in terms of delta in [km]
-% delta_a = a_c * 0.01;
-delta_a = 0;
-delta_e = e_c * 0.01;
+% delta_a = a_c * 0.00001
+delta_a = 10;
+% delta_a = 0;
+delta_e = - e_c * 0.1;
 % delta_e = 0;
-delta_i = deg2rad(2) * a_c;
+% delta_i = deg2rad(1) * a_c;
+delta_i = deg2rad(3) * a_c;
 % delta_i = 0;
-% delta_omega = deg2rad(0.05) * a_c;
+% delta_omega = deg2rad(7) * a_c;
 delta_omega = 0;
-delta_RAAN = deg2rad(3) * a_c;
-% delta_RAAN = 0;
-% delta_nu = deg2rad(-0.016) * a_c;
-delta_nu = deg2rad(-1) * a_c;
+% delta_RAAN = deg2rad(1) * a_c;
+delta_RAAN = 0;
+delta_nu = deg2rad(-0.016) * a_c;
+% delta_nu = deg2rad(-1) * a_c;
 % delta_nu = 0;
 
 a_d = a_c + delta_a;
@@ -38,6 +40,7 @@ inc_d = inc_c + delta_i / a_c;
 omega_d = omega_c + delta_omega / a_c;
 RAAN_d = RAAN_c + delta_RAAN / a_c;
 nu_d = nu_c + delta_nu / a_c;
+n_d = sqrt(mu / a_d^3);
 
 %% Part b: Numerical integration of NERM
 
@@ -50,60 +53,97 @@ T_vec = cross(N_vec, R_vec);
 rot = [R_vec'; T_vec'; N_vec'];
 theta_dot = sqrt(mu / (a_c^3 * (1 - e_c^2)^3)) * (1 + e_c * cos(nu_c))^2;
 theta_dot_vec = [0 0 theta_dot];
+r0_dot = norm(pos_c) * e_c * sin(nu_c) / (1 + e_c * cos(nu_c)) * sqrt(mu / (a_c^3 * (1 - e_c^2)^3)) * (1 + e_c * cos(nu_c))^2;
 
 rel_pos = pos_d - pos_c;
 rel_pos_RTN = (rot * rel_pos)';
 rel_vel = vel_d - vel_c;
 rel_vel_RTN = (rot * rel_vel)' - cross(theta_dot_vec, rel_pos_RTN);
-rel_vel_RTN_c = (rot * vel_c)' - cross(theta_dot_vec, rot * pos_c);
+vel_RTN_c = (rot * vel_c)' - cross(theta_dot_vec, rot * pos_c);
 
-init_cond_rel = [rel_pos_RTN rel_vel_RTN norm(pos_c) norm(rel_vel_RTN_c) nu_c theta_dot];
-options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9, 'MaxStep', 100);
+% init_cond_rel = [rel_pos_RTN rel_vel_RTN norm(pos_c) norm(vel_RTN_c) nu_c theta_dot];
+init_cond_rel = [rel_pos_RTN rel_vel_RTN norm(pos_c) r0_dot nu_c theta_dot];
+options = odeset('RelTol', 1e-12, 'AbsTol', 1e-15, 'MaxStep', 100);
 N = 10000;
 tspan = linspace(0, 10 * T, N);
-[t, y] = ode89(@(t, state) NERM(t, state, mu), tspan, init_cond_rel, options);
+[t, y] = ode89(@(t, state) NERM(t, state, mu, n_d), tspan, init_cond_rel, options);
+
+% Plots for the position
+figure
+subplot(3,1,1)
+plot(t / T, y(:, 1))
+grid on
+ylabel('R-component [km]')
+
+subplot(3,1,2)
+plot(t / T, y(:, 2))
+grid on
+ylabel('T-component [km]')
+
+subplot(3,1,3)
+plot(t / T, y(:, 3))
+grid on
+ylabel('N-component [km]')
+xlabel("Number of chief's orbit")
+sgtitle("Relative position of the deputy in the RTN frame based on the chief")
 
 figure
-subplot(3,2,1)
-plot(t / 3600, y(:, 1))
+subplot(2,2,1)
+plot(y(:, 1), y(:, 2))
 grid on
-ylabel('R-component of position [km]')
+xlabel('R-component [km]')
+ylabel('T-component [km]')
 
-subplot(3,2,3)
-plot(t / 3600, y(:, 2))
+subplot(2,2,2)
+plot(y(:, 1), y(:, 3))
 grid on
-ylabel('T-component of position [km]')
+xlabel('R-component [km]')
+ylabel('N-component [km]')
 
-subplot(3,2,5)
-plot(t / 3600, y(:, 3))
+subplot(2,2,3)
+plot(y(:, 2), y(:, 3))
 grid on
-ylabel('N-component of position [km]')
-xlabel('Time [hours]')
+xlabel('T-component [km]')
+ylabel('N-component [km]')
 
-subplot(3,2,2)
-plot(t / 3600, y(:, 4))
-grid on
-ylabel('R-component of velocity [km/s]')
-
-subplot(3,2,4)
-plot(t / 3600, y(:, 5))
-grid on
-ylabel('T-component of velocity [km/s]')
-
-subplot(3,2,6)
-plot(t / 3600, y(:, 6))
-grid on
-ylabel('N-component of velocity [km/s]')
-xlabel('Time [hours]')
-
-figure
+subplot(2,2,4)
 plot3(y(:, 1), y(:, 2), y(:, 3))
 axis equal
 grid on
+view(3)
 xlabel('R-axis [km]')
 ylabel('T-axis [km]')
 zlabel('N-axis [km]')
-title('Deputy orbit in RTN frame centered on chief')
+title("Deputy's relative position in RTN frame centered on chief")
+
+% Plots for the velocity
+figure
+subplot(3,1,1)
+plot(t / T, y(:, 4))
+grid on
+ylabel('R-component [km/s]')
+
+subplot(3,1,2)
+plot(t / T, y(:, 5))
+grid on
+ylabel('T-component [km/s]')
+
+subplot(3,1,3)
+plot(t / T, y(:, 6))
+grid on
+ylabel('N-component [km/s]')
+xlabel("Number of chief's orbit")
+sgtitle("Relative velocity of the deputy in the RTN frame based on the chief")
+
+figure
+plot3(y(:, 4), y(:, 5), y(:, 6))
+axis equal
+grid on
+view(3)
+xlabel('R-axis [km/s]')
+ylabel('T-axis [km/s]')
+zlabel('N-axis [km/s]')
+title("Deputy's relative velocity in RTN frame centered on chief")
 
 %% Part c: Numerical integration of FODE
 
@@ -136,45 +176,56 @@ end
 
 figure
 subplot(3,2,1)
-plot(t_abs / 3600, fode_RTN(:, 1))
+plot(t_abs / T, fode_RTN(:, 1))
 grid on
 ylabel('R-component of position [km]')
 
 subplot(3,2,3)
-plot(t_abs / 3600, fode_RTN(:, 2))
+plot(t_abs / T, fode_RTN(:, 2))
 grid on
 ylabel('T-component of position [km]')
 
 subplot(3,2,5)
-plot(t_abs / 3600, fode_RTN(:, 3))
+plot(t_abs / T, fode_RTN(:, 3))
 grid on
 ylabel('N-component of position [km]')
-xlabel('Time [hours]')
+xlabel("Number of chief's orbit")
 
 subplot(3,2,2)
-plot(t_abs / 3600, fode_RTN(:, 4))
+plot(t_abs / T, fode_RTN(:, 4))
 grid on
 ylabel('R-component of velocity [km/s]')
 
 subplot(3,2,4)
-plot(t_abs / 3600, fode_RTN(:, 5))
+plot(t_abs / T, fode_RTN(:, 5))
 grid on
 ylabel('T-component of velocity [km/s]')
 
 subplot(3,2,6)
-plot(t_abs / 3600, fode_RTN(:, 6))
+plot(t_abs / T, fode_RTN(:, 6))
 grid on
 ylabel('N-component of velocity [km/s]')
-xlabel('Time [hours]')
+xlabel("Number of chief's orbit")
 
 figure
 plot3(fode_RTN(:, 1), fode_RTN(:, 2), fode_RTN(:, 3))
 axis equal
 grid on
+view(3)
 xlabel('R-axis [km]')
 ylabel('T-axis [km]')
 zlabel('N-axis [km]')
-title('Deputy orbit in RTN frame centered on chief')
+title("Deputy's relative position in RTN frame centered on chief")
+
+figure
+plot3(fode_RTN(:, 4), fode_RTN(:, 5), fode_RTN(:, 6))
+axis equal
+grid on
+view(3)
+xlabel('R-axis [km/s]')
+ylabel('T-axis [km/s]')
+zlabel('N-axis [km/s]')
+title("Deputy's relative velocity in RTN frame centered on chief")
 
 % Modeling the Earth
 [X, Y, Z] = sphere(10);
@@ -187,52 +238,115 @@ plot3(y_abs(:, 7), y_abs(:, 8), y_abs(:, 9))
 axis equal
 grid on
 hold off
+view(3)
 legend('Earth', 'Chief orbit', 'Deputy orbit')
 xlabel('X-axis [km]')
 ylabel('Y-axis [km]')
 zlabel('Z-axis [km]')
-title('Chief and deputy orbits around the Earth in ECI frame')
+title("Chief's and deputy's orbits around the Earth in ECI frame")
 
 %% Part d: Numerical errors + new initial conditions
 
 % Checking it's only numerical errors between parts b and c
 figure
 subplot(3,2,1)
-plot(t_abs / 3600, abs(y(:, 1) - fode_RTN(:, 1)))
+plot(t_abs / T, abs(y(:, 1) - fode_RTN(:, 1)))
 grid on
 ylabel('R-component of position [km]')
 
 subplot(3,2,3)
-plot(t_abs / 3600, abs(y(:, 2) - fode_RTN(:, 2)))
+plot(t_abs / T, abs(y(:, 2) - fode_RTN(:, 2)))
 grid on
 ylabel('T-component of position [km]')
 
 subplot(3,2,5)
-plot(t_abs / 3600, abs(y(:, 3) - fode_RTN(:, 3)))
+plot(t_abs / T, abs(y(:, 3) - fode_RTN(:, 3)))
 grid on
 ylabel('N-component of position [km]')
-xlabel('Time [hours]')
+xlabel("Number of chief's orbit")
 
 subplot(3,2,2)
-plot(t_abs / 3600, abs(y(:, 4) - fode_RTN(:, 4)))
+plot(t_abs / T, abs(y(:, 4) - fode_RTN(:, 4)))
 grid on
 ylabel('R-component of velocity [km/s]')
 
 subplot(3,2,4)
-plot(t_abs / 3600, abs(y(:, 5) - fode_RTN(:, 5)))
+plot(t_abs / T, abs(y(:, 5) - fode_RTN(:, 5)))
 grid on
 ylabel('T-component of velocity [km/s]')
 
 subplot(3,2,6)
-plot(t_abs / 3600, abs(y(:, 6) - fode_RTN(:, 6)))
+plot(t_abs / T, abs(y(:, 6) - fode_RTN(:, 6)))
 grid on
 ylabel('N-component of velocity [km/s]')
-xlabel('Time [hours]')
+xlabel("Number of chief's orbit")
 
 %% Part f: Maneuver to establish a bounded periodic relative motion
 
-% [t, y] = ode89(@(t, state) NERM_maneuver(t, state, mu, - delta_a), tspan, init_cond_rel, options);
+n_d = sqrt(mu / a_d^3);
+tspan_before = linspace(0, 3 * 2 * pi / n_d, 3000);
+% tspan_before = linspace(0, 3 * T, 3000);
+[t_man_bef, y_man_bef] = ode89(@(t, state) NERM(t, state, mu, n_d), tspan_before, init_cond_rel, options);
 
+delta_v = - delta_a * n_d * sqrt(1 - e_d) / (2 * sqrt(1 + e_d));
+init_cond_maneuver = y_man_bef(end,:) + [0 0 0 0 delta_v 0 0 0 0 0];
+
+tspan_after = linspace(tspan_before(end), 10 * T, 7000);
+[t_man_aft, y_man_aft] = ode89(@(t, state) NERM(t, state, mu, n_d), tspan_after, init_cond_maneuver, options);
+
+figure
+subplot(3,2,1)
+hold on
+plot(t_man_bef / 3600, y_man_bef(:, 1))
+plot(t_man_aft / 3600, y_man_aft(:, 1))
+hold off
+grid on
+
+subplot(3,2,3)
+hold on
+plot(t_man_bef / 3600, y_man_bef(:, 2))
+plot(t_man_aft / 3600, y_man_aft(:, 2))
+hold off
+grid on
+
+subplot(3,2,5)
+hold on
+plot(t_man_bef / 3600, y_man_bef(:, 3))
+plot(t_man_aft / 3600, y_man_aft(:, 3))
+hold off
+grid on
+
+subplot(3,2,2)
+hold on
+plot(t_man_bef / 3600, y_man_bef(:, 4))
+plot(t_man_aft / 3600, y_man_aft(:, 4))
+hold off
+grid on
+
+subplot(3,2,4)
+hold on
+plot(t_man_bef / 3600, y_man_bef(:, 5))
+plot(t_man_aft / 3600, y_man_aft(:, 5))
+hold off
+grid on
+
+subplot(3,2,6)
+hold on
+plot(t_man_bef / 3600, y_man_bef(:, 6))
+plot(t_man_aft / 3600, y_man_aft(:, 6))
+hold off
+grid on
+
+figure
+hold on
+plot3(y_man_bef(:,1), y_man_bef(:,2), y_man_bef(:,3))
+plot3(y_man_aft(:,1), y_man_aft(:,2), y_man_aft(:,3))
+hold off
+grid on
+axis equal
+xlabel('X-axis [km]')
+ylabel('Y-axis [km]')
+zlabel('Z-axis [km]')
 
 %% Functions
 
@@ -262,7 +376,7 @@ function [pos_inertial, vel_inertial] = OEtoECI(a, e, inc, omega, RAAN, true_ano
     vel_inertial = rot_perifocalTOinertial * vel_perifocal';
 end
 
-function statedot = NERM(t, state, mu)
+function statedot = NERM(t, state, mu, n_d)
     statedot = zeros(size(state));
     rho = state(1:3);
     rho_dot = state(4:6);
@@ -274,6 +388,10 @@ function statedot = NERM(t, state, mu)
     statedot(1:3) = rho_dot;
     statedot(7) = r0_dot;
     statedot(9) = theta0_dot;
+%     abs(t / (3 * 2 * pi / n_d) - 3)
+%     if abs(t / (3 * 2 * pi / n_d) - 3)<1e-9
+%         x = 3-2
+%     end
 
     r0_ddot = r0 * theta0_dot^2 - mu / r0^2;
     statedot(8) = r0_ddot;
@@ -285,35 +403,6 @@ function statedot = NERM(t, state, mu)
     statedot(5) = - 2 * theta0_dot * state(4) - theta0_ddot * rho(1) + theta0_dot^2 * rho(2) - mu * rho(2) / denom;
     statedot(6) = - mu * rho(3) / denom;
 end
-
-% function statedot = NERM_maneuver(t, state, mu)
-%     statedot = zeros(size(state));
-%     statedot(1:3) = state(4:6);
-% 
-%     r0 = state(1:3);
-%     rho = state(7:9);
-%     
-%     r1 = r0 + rho;
-%     v1 = state(4:6) + state(10:12);
-%     [a, e, i, omega, RAAN, nu] = Keplerian_elements([r1, v1], mu);
-% 
-%     if abs(nu) < 1e-9 % condition on the deputy true anomaly, when at periapsis
-%         % apply maneuver
-%         n = sqrt(mu / a^3);
-%         maneuver_RTN_d = delta_a / (2 * a * sqrt(1 - e^2)) * (n * norm(r1)) * [0 1 0];
-% 
-%         R_vec = r1 / norm(r1);
-%         N_vec = cross(r1, v1) / norm(cross(r1, v1));
-%         T_vec = cross(N_vec, R_vec);
-%         rot = [R_vec; T_vec; N_vec];
-% %         theta_dot = [0, 0, - sqrt(mu / (a^3 * (1 - e^2)^3)) * (1 + e * cos(nu))^2];
-%         maneuver_ECI_d = rot' * maneuver_RTN_d; % maybe ' the maneuvever too
-%     end
-% 
-%     statedot(7:9) = state(10:12) + maneuver_ECI_d;
-%     statedot(4:6) = - mu * r0 / (norm(r0))^3;
-%     statedot(10:12) = - mu * (r0 + rho) / (norm(r0 + rho))^3 + mu * r0 / (norm(r0))^3;
-% end
 
 function statedot = FODE_2sats(t, state, mu)
     statedot = zeros(size(state));
@@ -343,4 +432,13 @@ function [a, e, i, omega, RAAN, nu] = Keplerian_elements(state, mu)
 %     M = wrapTo2Pi(E - e * sin(E));
     u = atan2((pos(3) / sin(i)), (pos(1) * cos(RAAN) + pos(2) * sin(RAAN)));
     omega = wrapTo2Pi(u - nu);
+end
+
+function E = eccentric_anom(M, e, epsilon)
+    M = wrapTo2Pi(M);
+    E = pi;
+    while abs(- E + e * sin(E) + M) / (1 - e * cos(E)) > epsilon
+        E_new = E - (E - e * sin(E) - M) / (1 - e * cos(E));
+        E = E_new;
+    end
 end
