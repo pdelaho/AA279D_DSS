@@ -1,13 +1,14 @@
 %% Problem 1  
 
 close all; clc; clear;
-path_config;
+% path_config;
 mu = 398600.435436; % km^3/s^2
 R_E = 6378; % km
 
 %% Part a: Chief and deputy orbits
 
 % For the chief
+% Since there are no perturbations, mean elements = osculating elements
 a_c = 36943; % km, semi-major axis
 e_c = 0.8111; % eccentricity
 inc_c = deg2rad(59); % inclination
@@ -15,6 +16,7 @@ omega_c = deg2rad(188); % argument of periapsis
 RAAN_c = deg2rad(84); % right ascension of the ascending node
 nu_c = deg2rad(0); % true anomaly
 T = 2 * pi * sqrt(a_c^3 / mu);
+n_c = sqrt(mu / a_c^3);
 
 % For the deputy
 % Write it in terms of delta in [km]
@@ -40,7 +42,7 @@ inc_d = inc_c + delta_i / a_c;
 omega_d = omega_c + delta_omega / a_c;
 RAAN_d = RAAN_c + delta_RAAN / a_c;
 nu_d = nu_c + delta_nu / a_c;
-n_d = sqrt(mu / a_d^3);
+% n_d = sqrt(mu / a_d^3);
 
 %% Part b: Numerical integration of NERM
 
@@ -63,7 +65,7 @@ vel_RTN_c = (rot * vel_c)' - cross(theta_dot_vec, rot * pos_c);
 
 % init_cond_rel = [rel_pos_RTN rel_vel_RTN norm(pos_c) norm(vel_RTN_c) nu_c theta_dot];
 init_cond_rel = [rel_pos_RTN rel_vel_RTN norm(pos_c) r0_dot nu_c theta_dot];
-options = odeset('RelTol', 1e-12, 'AbsTol', 1e-15, 'MaxStep', 10);
+options = odeset('RelTol', 1e-12, 'AbsTol', 1e-15, 'MaxStep', 100);
 N = 10000;
 tspan = linspace(0, 10 * T, N);
 [t, y] = ode89(@(t, state) NERM(t, state, mu), tspan, init_cond_rel, options);
@@ -72,80 +74,102 @@ tspan = linspace(0, 10 * T, N);
 
 % % Plots for the position
 % figure
-% subplot(3,1,1)
-% plot(t / T, y(:, 1))
+% subplot(6,4,[1,2,5,6])
+% plot(t / T, y(:, 1) / a_c)
 % grid on
-% ylabel('R-component [km]')
+% sgtitle("Normalized relative position of the deputy in the RTN frame based on the chief using NERM (vs time and 2D/3D plots)")
+% ylabel('x/a_0 [-]')
 % 
-% subplot(3,1,2)
-% plot(t / T, y(:, 2))
+% subplot(6,4,[9,10,13,14])
+% plot(t / T, y(:, 2) / a_c)
 % grid on
-% ylabel('T-component [km]')
+% ylabel('y/a_0 [-]')
 % 
-% subplot(3,1,3)
-% plot(t / T, y(:, 3))
+% subplot(6,4,[17,18,21,22])
+% plot(t / T, y(:, 3) / a_c)
 % grid on
-% ylabel('N-component [km]')
+% ylabel('z/a_0 [-]')
 % xlabel("Number of chief's orbit")
-% sgtitle("Relative position of the deputy in the RTN frame based on the chief")
 % 
-% figure
-% subplot(2,2,1)
-% plot(y(:, 1), y(:, 2))
+% subplot(6,4,[3,7,11])
+% plot(y(:, 1) / a_c, y(:, 2) / a_c)
 % grid on
-% xlabel('R-component [km]')
-% ylabel('T-component [km]')
+% axis square
+% xlabel('x/a_0 [-]')
+% ylabel('y/a_0 [-]')
 % 
-% subplot(2,2,2)
-% plot(y(:, 1), y(:, 3))
+% subplot(6,4,[4,8,12])
+% plot(y(:, 1) / a_c, y(:, 3) / a_c)
 % grid on
-% xlabel('R-component [km]')
-% ylabel('N-component [km]')
+% axis square
+% xlabel('x/a_0 [-]')
+% ylabel('z/a_0 [-]')
 % 
-% subplot(2,2,3)
-% plot(y(:, 2), y(:, 3))
+% subplot(6,4,[15,19,23])
+% plot(y(:, 2) / a_c, y(:, 3) / a_c)
 % grid on
-% xlabel('T-component [km]')
-% ylabel('N-component [km]')
+% axis square
+% xlabel('y/a_0 [-]')
+% ylabel('z/a_0 [-]')
 % 
-% subplot(2,2,4)
-% plot3(y(:, 1), y(:, 2), y(:, 3))
+% subplot(6,4,[16,20,24])
+% plot3(y(:, 1) / a_c, y(:, 2) / a_c, y(:, 3) / a_c)
 % axis equal
 % grid on
 % view(3)
-% xlabel('R-axis [km]')
-% ylabel('T-axis [km]')
-% zlabel('N-axis [km]')
-% title("Deputy's relative position in RTN frame centered on chief")
-% 
+% xlabel('x/a_0 [-]')
+% ylabel('y/a_0 [-]')
+% zlabel('z/a_0 [-]')
+
 % % Plots for the velocity
 % figure
-% subplot(3,1,1)
-% plot(t / T, y(:, 4))
+% subplot(6,4,[1,2,5,6])
+% plot(t / T, y(:, 4) / (a_c * n_c))
 % grid on
-% ylabel('R-component [km/s]')
+% sgtitle("Normalized relative velocity of the deputy in the RTN frame based on the chief using NERM (vs time and 2D/3D plots)")
+% ylabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
 % 
-% subplot(3,1,2)
-% plot(t / T, y(:, 5))
+% subplot(6,4,[9,10,13,14])
+% plot(t / T, y(:, 5) / (a_c * n_c))
 % grid on
-% ylabel('T-component [km/s]')
+% ylabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
 % 
-% subplot(3,1,3)
-% plot(t / T, y(:, 6))
+% subplot(6,4,[17,18,21,22])
+% plot(t / T, y(:, 6) / (a_c * n_c))
 % grid on
-% ylabel('N-component [km/s]')
+% ylabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
 % xlabel("Number of chief's orbit")
-% sgtitle("Relative velocity of the deputy in the RTN frame based on the chief")
 % 
-% figure
-% plot3(y(:, 4), y(:, 5), y(:, 6))
+% 
+% subplot(6,4,[3,7,11])
+% plot(y(:, 4) / (a_c * n_c), y(:, 5) / (a_c * n_c))
+% grid on
+% axis square
+% xlabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% ylabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% 
+% subplot(6,4,[4,8,12])
+% plot(y(:, 4) / (a_c * n_c), y(:, 6) / (a_c * n_c))
+% grid on
+% axis square
+% xlabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% ylabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% 
+% subplot(6,4,[15,19,23])
+% plot(y(:, 5) / (a_c * n_c), y(:, 6) / (a_c * n_c))
+% grid on
+% axis square
+% xlabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% ylabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% 
+% subplot(6,4,[16,20,24])
+% plot3(y(:, 4) / (a_c * n_c), y(:, 5) / (a_c * n_c), y(:, 6) / (a_c * n_c))
 % axis equal
 % grid on
 % view(3)
-% xlabel('R-axis [km/s]')
-% ylabel('T-axis [km/s]')
-% zlabel('N-axis [km/s]')
-% title("Deputy's relative velocity in RTN frame centered on chief")
+% xlabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% ylabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% zlabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
 
 %% Part c: Numerical integration of FODE
 
@@ -176,59 +200,105 @@ for i=1:N
     fode_RTN(i, 4:6) = rho_dot_RTN;
 end
 
+% % Plots for the position
 % figure
-% subplot(3,2,1)
-% plot(t_abs / T, fode_RTN(:, 1))
+% subplot(6,4,[1,2,5,6])
+% plot(t / T, fode_RTN(:, 1) / a_c)
 % grid on
-% ylabel('R-component of position [km]')
+% sgtitle("Normalized relative position of the deputy in the RTN frame based on the chief using FODE (vs time and 2D/3D plots)")
+% ylabel('x/a_0 [-]')
 % 
-% subplot(3,2,3)
-% plot(t_abs / T, fode_RTN(:, 2))
+% subplot(6,4,[9,10,13,14])
+% plot(t / T, fode_RTN(:, 2) / a_c)
 % grid on
-% ylabel('T-component of position [km]')
+% ylabel('y/a_0 [-]')
 % 
-% subplot(3,2,5)
-% plot(t_abs / T, fode_RTN(:, 3))
+% subplot(6,4,[17,18,21,22])
+% plot(t / T, fode_RTN(:, 3) / a_c)
 % grid on
-% ylabel('N-component of position [km]')
+% ylabel('z/a_0 [-]')
 % xlabel("Number of chief's orbit")
 % 
-% subplot(3,2,2)
-% plot(t_abs / T, fode_RTN(:, 4))
+% subplot(6,4,[3,7,11])
+% plot(fode_RTN(:, 1) / a_c, fode_RTN(:, 2) / a_c)
 % grid on
-% ylabel('R-component of velocity [km/s]')
+% axis square
+% xlabel('x/a_0 [-]')
+% ylabel('y/a_0 [-]')
 % 
-% subplot(3,2,4)
-% plot(t_abs / T, fode_RTN(:, 5))
+% subplot(6,4,[4,8,12])
+% plot(fode_RTN(:, 1) / a_c, fode_RTN(:, 3) / a_c)
 % grid on
-% ylabel('T-component of velocity [km/s]')
+% axis square
+% xlabel('x/a_0 [-]')
+% ylabel('z/a_0 [-]')
 % 
-% subplot(3,2,6)
-% plot(t_abs / T, fode_RTN(:, 6))
+% subplot(6,4,[15,19,23])
+% plot(fode_RTN(:, 2) / a_c, fode_RTN(:, 3) / a_c)
 % grid on
-% ylabel('N-component of velocity [km/s]')
-% xlabel("Number of chief's orbit")
+% axis square
+% xlabel('y/a_0 [-]')
+% ylabel('z/a_0 [-]')
 % 
-% figure
-% plot3(fode_RTN(:, 1), fode_RTN(:, 2), fode_RTN(:, 3))
+% subplot(6,4,[16,20,24])
+% plot3(fode_RTN(:, 1) / a_c, fode_RTN(:, 2) / a_c, fode_RTN(:, 3) / a_c)
 % axis equal
 % grid on
 % view(3)
-% xlabel('R-axis [km]')
-% ylabel('T-axis [km]')
-% zlabel('N-axis [km]')
-% title("Deputy's relative position in RTN frame centered on chief")
+% xlabel('x/a_0 [-]')
+% ylabel('y/a_0 [-]')
+% zlabel('z/a_0 [-]')
 % 
+% % Plots for the velocity
 % figure
-% plot3(fode_RTN(:, 4), fode_RTN(:, 5), fode_RTN(:, 6))
+% subplot(6,4,[1,2,5,6])
+% plot(t / T, fode_RTN(:, 4) / (a_c * n_c))
+% grid on
+% sgtitle("Normalized relative velocity of the deputy in the RTN frame based on the chief using FODE (vs time and 2D/3D plots)")
+% ylabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% 
+% subplot(6,4,[9,10,13,14])
+% plot(t / T, fode_RTN(:, 5) / (a_c * n_c))
+% grid on
+% ylabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% 
+% subplot(6,4,[17,18,21,22])
+% plot(t / T, fode_RTN(:, 6) / (a_c * n_c))
+% grid on
+% ylabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% xlabel("Number of chief's orbit")
+% 
+% 
+% subplot(6,4,[3,7,11])
+% plot(fode_RTN(:, 4) / (a_c * n_c), fode_RTN(:, 5) / (a_c * n_c))
+% grid on
+% axis square
+% xlabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% ylabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% 
+% subplot(6,4,[4,8,12])
+% plot(fode_RTN(:, 4) / (a_c * n_c), fode_RTN(:, 6) / (a_c * n_c))
+% grid on
+% axis square
+% xlabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% ylabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% 
+% subplot(6,4,[15,19,23])
+% plot(fode_RTN(:, 5) / (a_c * n_c), fode_RTN(:, 6) / (a_c * n_c))
+% grid on
+% axis square
+% xlabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% ylabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% 
+% subplot(6,4,[16,20,24])
+% plot3(fode_RTN(:, 4) / (a_c * n_c), fode_RTN(:, 5) / (a_c * n_c), fode_RTN(:, 6) / (a_c * n_c))
 % axis equal
 % grid on
 % view(3)
-% xlabel('R-axis [km/s]')
-% ylabel('T-axis [km/s]')
-% zlabel('N-axis [km/s]')
-% title("Deputy's relative velocity in RTN frame centered on chief")
-% 
+% xlabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% ylabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+% zlabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+
 % % Modeling the Earth
 % [X, Y, Z] = sphere(10);
 % 
@@ -251,6 +321,7 @@ end
 
 % % Checking it's only numerical errors between parts b and c
 % figure
+% sgtitle('Error in relative position and velocity in RTN frame between NERM and FODE')
 % subplot(3,2,1)
 % plot(t_abs / T, abs(y(:, 1) - fode_RTN(:, 1)))
 % grid on
@@ -323,27 +394,181 @@ init_cond_aft_maneuver = y_man_bef_2(end, 1:10) + [0 0 0 maneuver_RTN_c' 0 0 0 0
 [t_man_aft_2, y_man_aft_2] = ode89(@(t, state) NERM(t, state, mu), tspan_after, init_cond_aft_maneuver, options);
 
 
-rel_pos_ECI = rot_ECItoRTN_c' * y_man_aft_2(end, 1:3)';
-rel_vel_ECI = rot_ECItoRTN_c' * (y_man_aft_2(end, 4:6)' + cross(theta_dot_c, y_man_aft_2(end, 1:3))');
-pos_d_ECI = pos_c + rel_pos_ECI'
-vel_d_ECI = vel_c + rel_vel_ECI'
+% rel_pos_ECI = rot_ECItoRTN_c' * y_man_aft_2(end, 1:3)';
+% rel_vel_ECI = rot_ECItoRTN_c' * (y_man_aft_2(end, 4:6)' + cross(theta_dot_c, y_man_aft_2(end, 1:3))');
+% pos_d_ECI = y_abs(end, 1:3) + rel_pos_ECI'
+% vel_d_ECI = y_abs(end, 4:6) + rel_vel_ECI'
+% 
+% [a, e, inc, omega, RAAN, nu] = Keplerian_elements([pos_d_ECI' vel_d_ECI'], mu);
+% 
+% a - a_c
 
-[a, e, inc, omega, RAAN, nu] = Keplerian_elements([pos_d_ECI' vel_d_ECI'], mu);
-
-a - a_c
-
-
+% Plots for the position
 figure
-% plot3([y_man_bef_2(:, 1)' y_man_aft_2(:, 1)'], [y_man_bef_2(:, 2)' y_man_aft_2(:, 2)'], [y_man_bef_2(:, 3)' y_man_aft_2(:, 3)'])
-plot3(y_man_bef_2(:, 1), y_man_bef_2(:, 2), y_man_bef_2(:, 3))
+subplot(6,4,[1,2,5,6])
 hold on
-plot3(y_man_aft_2(:, 1), y_man_aft_2(:, 2), y_man_aft_2(:, 3))
+plot(t_man_bef_2 / T, y_man_bef_2(:, 1) / a_c)
+plot(t_man_aft_2 / T, y_man_aft_2(:, 1) / a_c)
 hold off
+legend('Before \DeltaV', 'After \DeltaV')
 grid on
+sgtitle("Normalized relative position of the deputy in the RTN frame based on the chief using NERM (vs time and 2D/3D plots)")
+ylabel('x/a_0 [-]')
+
+subplot(6,4,[9,10,13,14])
+hold on
+plot(t_man_bef_2 / T, y_man_bef_2(:, 2) / a_c)
+plot(t_man_aft_2 / T, y_man_aft_2(:, 2) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+ylabel('y/a_0 [-]')
+
+subplot(6,4,[17,18,21,22])
+hold on
+plot(t_man_bef_2 / T, y_man_bef_2(:, 3) / a_c)
+plot(t_man_aft_2 / T, y_man_aft_2(:, 3) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+ylabel('z/a_0 [-]')
+xlabel("Number of chief's orbit")
+
+subplot(6,4,[3,7,11])
+hold on
+plot(y_man_bef_2(:, 1) / a_c, y_man_bef_2(:, 2) / a_c)
+plot(y_man_aft_2(:, 1) / a_c, y_man_aft_2(:, 2) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+axis square
+xlabel('x/a_0 [-]')
+ylabel('y/a_0 [-]')
+
+subplot(6,4,[4,8,12])
+hold on
+plot(y_man_bef_2(:, 1) / a_c, y_man_bef_2(:, 3) / a_c)
+plot(y_man_aft_2(:, 1) / a_c, y_man_aft_2(:, 3) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+axis square
+xlabel('x/a_0 [-]')
+ylabel('z/a_0 [-]')
+
+subplot(6,4,[15,19,23])
+hold on
+plot(y_man_bef_2(:, 2) / a_c, y_man_bef_2(:, 3) / a_c)
+plot(y_man_aft_2(:, 2) / a_c, y_man_aft_2(:, 3) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+axis square
+xlabel('y/a_0 [-]')
+ylabel('z/a_0 [-]')
+
+subplot(6,4,[16,20,24])
+hold on
+plot3(y_man_bef_2(:, 1) / a_c, y_man_bef_2(:, 2) / a_c, y_man_bef_2(:, 3) / a_c)
+plot3(y_man_aft_2(:, 1) / a_c, y_man_aft_2(:, 2) / a_c, y_man_aft_2(:, 1) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
 axis equal
-xlabel('X-axis [km]')
-ylabel('Y-axis [km]')
-zlabel('Z-axis [km]')
+grid on
+view(3)
+xlabel('x/a_0 [-]')
+ylabel('y/a_0 [-]')
+zlabel('z/a_0 [-]')
+
+% Plots for the velocity
+figure
+subplot(6,4,[1,2,5,6])
+hold on
+plot(t_man_bef_2 / T, y_man_bef_2(:, 4) / a_c)
+plot(t_man_aft_2 / T, y_man_aft_2(:, 4) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+sgtitle("Normalized relative velocity of the deputy in the RTN frame based on the chief using NERM (vs time and 2D/3D plots)")
+ylabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+
+subplot(6,4,[9,10,13,14])
+hold on
+plot(t_man_bef_2 / T, y_man_bef_2(:, 5) / a_c)
+plot(t_man_aft_2 / T, y_man_aft_2(:, 5) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+ylabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+
+subplot(6,4,[17,18,21,22])
+hold on
+plot(t_man_bef_2 / T, y_man_bef_2(:, 6) / a_c)
+plot(t_man_aft_2 / T, y_man_aft_2(:, 6) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+ylabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+xlabel("Number of chief's orbit")
+
+
+subplot(6,4,[3,7,11])
+hold on
+plot(y_man_bef_2(:, 1) / a_c, y_man_bef_2(:, 2) / a_c)
+plot(y_man_aft_2(:, 1) / a_c, y_man_aft_2(:, 2) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+axis square
+xlabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+ylabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+
+subplot(6,4,[4,8,12])
+hold on
+plot(y_man_bef_2(:, 1) / a_c, y_man_bef_2(:, 3) / a_c)
+plot(y_man_aft_2(:, 1) / a_c, y_man_aft_2(:, 3) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+axis square
+xlabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+ylabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+
+subplot(6,4,[15,19,23])
+hold on
+plot(y_man_bef_2(:, 2) / a_c, y_man_bef_2(:, 3) / a_c)
+plot(y_man_aft_2(:, 2) / a_c, y_man_aft_2(:, 3) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+grid on
+axis square
+xlabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+ylabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+
+subplot(6,4,[16,20,24])
+hold on
+plot3(y_man_bef_2(:, 1) / a_c, y_man_bef_2(:, 2) / a_c, y_man_bef_2(:, 3) / a_c)
+plot3(y_man_aft_2(:, 1) / a_c, y_man_aft_2(:, 2) / a_c, y_man_aft_2(:, 3) / a_c)
+hold off
+legend('Before \DeltaV', 'After \DeltaV')
+axis equal
+grid on
+view(3)
+xlabel('$\dot{x}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+ylabel('$\dot{y}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+zlabel('$\dot{z}/(a_0n_0) [-]$', 'Interpreter', 'latex')
+
+% figure
+% % plot3([y_man_bef_2(:, 1)' y_man_aft_2(:, 1)'], [y_man_bef_2(:, 2)' y_man_aft_2(:, 2)'], [y_man_bef_2(:, 3)' y_man_aft_2(:, 3)'])
+% plot3(y_man_bef_2(:, 1), y_man_bef_2(:, 2), y_man_bef_2(:, 3))
+% hold on
+% plot3(y_man_aft_2(:, 1), y_man_aft_2(:, 2), y_man_aft_2(:, 3))
+% hold off
+% grid on
+% axis equal
+% xlabel('X-axis [km]')
+% ylabel('Y-axis [km]')
+% zlabel('Z-axis [km]')
 
 % 
 % figure
@@ -440,10 +665,6 @@ function statedot = NERM(t, state, mu)
     statedot(1:3) = rho_dot;
     statedot(7) = r0_dot;
     statedot(9) = theta0_dot;
-%     abs(t / (3 * 2 * pi / n_d) - 3)
-%     if abs(t / (3 * 2 * pi / n_d) - 3)<1e-9
-%         x = 3-2
-%     end
 
     r0_ddot = r0 * theta0_dot^2 - mu / r0^2;
     statedot(8) = r0_ddot;
@@ -515,13 +736,4 @@ function [a, e, i, omega, RAAN, nu] = Keplerian_elements(state, mu)
 %     M = wrapTo2Pi(E - e * sin(E));
     u = atan2((pos(3) / sin(i)), (pos(1) * cos(RAAN) + pos(2) * sin(RAAN)));
     omega = wrapTo2Pi(u - nu);
-end
-
-function E = eccentric_anom(M, e, epsilon)
-    M = wrapTo2Pi(M);
-    E = pi;
-    while abs(- E + e * sin(E) + M) / (1 - e * cos(E)) > epsilon
-        E_new = E - (E - e * sin(E) - M) / (1 - e * cos(E));
-        E = E_new;
-    end
 end
