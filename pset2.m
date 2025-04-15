@@ -30,9 +30,9 @@ delta_i = deg2rad(3) * a_c;
 delta_omega = 0;
 % delta_RAAN = deg2rad(1) * a_c;
 delta_RAAN = 0;
-delta_nu = deg2rad(-0.016) * a_c;
+% delta_nu = deg2rad(-0.016) * a_c;
 % delta_nu = deg2rad(-1) * a_c;
-% delta_nu = 0;
+delta_nu = 0;
 
 a_d = a_c + delta_a;
 e_d = e_c + delta_e / a_c;
@@ -63,87 +63,89 @@ vel_RTN_c = (rot * vel_c)' - cross(theta_dot_vec, rot * pos_c);
 
 % init_cond_rel = [rel_pos_RTN rel_vel_RTN norm(pos_c) norm(vel_RTN_c) nu_c theta_dot];
 init_cond_rel = [rel_pos_RTN rel_vel_RTN norm(pos_c) r0_dot nu_c theta_dot];
-options = odeset('RelTol', 1e-12, 'AbsTol', 1e-15, 'MaxStep', 100);
+options = odeset('RelTol', 1e-12, 'AbsTol', 1e-15, 'MaxStep', 10);
 N = 10000;
 tspan = linspace(0, 10 * T, N);
-[t, y] = ode89(@(t, state) NERM(t, state, mu, n_d), tspan, init_cond_rel, options);
+[t, y] = ode89(@(t, state) NERM(t, state, mu), tspan, init_cond_rel, options);
 
-% Plots for the position
-figure
-subplot(3,1,1)
-plot(t / T, y(:, 1))
-grid on
-ylabel('R-component [km]')
 
-subplot(3,1,2)
-plot(t / T, y(:, 2))
-grid on
-ylabel('T-component [km]')
 
-subplot(3,1,3)
-plot(t / T, y(:, 3))
-grid on
-ylabel('N-component [km]')
-xlabel("Number of chief's orbit")
-sgtitle("Relative position of the deputy in the RTN frame based on the chief")
-
-figure
-subplot(2,2,1)
-plot(y(:, 1), y(:, 2))
-grid on
-xlabel('R-component [km]')
-ylabel('T-component [km]')
-
-subplot(2,2,2)
-plot(y(:, 1), y(:, 3))
-grid on
-xlabel('R-component [km]')
-ylabel('N-component [km]')
-
-subplot(2,2,3)
-plot(y(:, 2), y(:, 3))
-grid on
-xlabel('T-component [km]')
-ylabel('N-component [km]')
-
-subplot(2,2,4)
-plot3(y(:, 1), y(:, 2), y(:, 3))
-axis equal
-grid on
-view(3)
-xlabel('R-axis [km]')
-ylabel('T-axis [km]')
-zlabel('N-axis [km]')
-title("Deputy's relative position in RTN frame centered on chief")
-
-% Plots for the velocity
-figure
-subplot(3,1,1)
-plot(t / T, y(:, 4))
-grid on
-ylabel('R-component [km/s]')
-
-subplot(3,1,2)
-plot(t / T, y(:, 5))
-grid on
-ylabel('T-component [km/s]')
-
-subplot(3,1,3)
-plot(t / T, y(:, 6))
-grid on
-ylabel('N-component [km/s]')
-xlabel("Number of chief's orbit")
-sgtitle("Relative velocity of the deputy in the RTN frame based on the chief")
-
-figure
-plot3(y(:, 4), y(:, 5), y(:, 6))
-axis equal
-grid on
-view(3)
-xlabel('R-axis [km/s]')
-ylabel('T-axis [km/s]')
-zlabel('N-axis [km/s]')
-title("Deputy's relative velocity in RTN frame centered on chief")
+% % Plots for the position
+% figure
+% subplot(3,1,1)
+% plot(t / T, y(:, 1))
+% grid on
+% ylabel('R-component [km]')
+% 
+% subplot(3,1,2)
+% plot(t / T, y(:, 2))
+% grid on
+% ylabel('T-component [km]')
+% 
+% subplot(3,1,3)
+% plot(t / T, y(:, 3))
+% grid on
+% ylabel('N-component [km]')
+% xlabel("Number of chief's orbit")
+% sgtitle("Relative position of the deputy in the RTN frame based on the chief")
+% 
+% figure
+% subplot(2,2,1)
+% plot(y(:, 1), y(:, 2))
+% grid on
+% xlabel('R-component [km]')
+% ylabel('T-component [km]')
+% 
+% subplot(2,2,2)
+% plot(y(:, 1), y(:, 3))
+% grid on
+% xlabel('R-component [km]')
+% ylabel('N-component [km]')
+% 
+% subplot(2,2,3)
+% plot(y(:, 2), y(:, 3))
+% grid on
+% xlabel('T-component [km]')
+% ylabel('N-component [km]')
+% 
+% subplot(2,2,4)
+% plot3(y(:, 1), y(:, 2), y(:, 3))
+% axis equal
+% grid on
+% view(3)
+% xlabel('R-axis [km]')
+% ylabel('T-axis [km]')
+% zlabel('N-axis [km]')
+% title("Deputy's relative position in RTN frame centered on chief")
+% 
+% % Plots for the velocity
+% figure
+% subplot(3,1,1)
+% plot(t / T, y(:, 4))
+% grid on
+% ylabel('R-component [km/s]')
+% 
+% subplot(3,1,2)
+% plot(t / T, y(:, 5))
+% grid on
+% ylabel('T-component [km/s]')
+% 
+% subplot(3,1,3)
+% plot(t / T, y(:, 6))
+% grid on
+% ylabel('N-component [km/s]')
+% xlabel("Number of chief's orbit")
+% sgtitle("Relative velocity of the deputy in the RTN frame based on the chief")
+% 
+% figure
+% plot3(y(:, 4), y(:, 5), y(:, 6))
+% axis equal
+% grid on
+% view(3)
+% xlabel('R-axis [km/s]')
+% ylabel('T-axis [km/s]')
+% zlabel('N-axis [km/s]')
+% title("Deputy's relative velocity in RTN frame centered on chief")
 
 %% Part c: Numerical integration of FODE
 
@@ -174,179 +176,229 @@ for i=1:N
     fode_RTN(i, 4:6) = rho_dot_RTN;
 end
 
-figure
-subplot(3,2,1)
-plot(t_abs / T, fode_RTN(:, 1))
-grid on
-ylabel('R-component of position [km]')
-
-subplot(3,2,3)
-plot(t_abs / T, fode_RTN(:, 2))
-grid on
-ylabel('T-component of position [km]')
-
-subplot(3,2,5)
-plot(t_abs / T, fode_RTN(:, 3))
-grid on
-ylabel('N-component of position [km]')
-xlabel("Number of chief's orbit")
-
-subplot(3,2,2)
-plot(t_abs / T, fode_RTN(:, 4))
-grid on
-ylabel('R-component of velocity [km/s]')
-
-subplot(3,2,4)
-plot(t_abs / T, fode_RTN(:, 5))
-grid on
-ylabel('T-component of velocity [km/s]')
-
-subplot(3,2,6)
-plot(t_abs / T, fode_RTN(:, 6))
-grid on
-ylabel('N-component of velocity [km/s]')
-xlabel("Number of chief's orbit")
-
-figure
-plot3(fode_RTN(:, 1), fode_RTN(:, 2), fode_RTN(:, 3))
-axis equal
-grid on
-view(3)
-xlabel('R-axis [km]')
-ylabel('T-axis [km]')
-zlabel('N-axis [km]')
-title("Deputy's relative position in RTN frame centered on chief")
-
-figure
-plot3(fode_RTN(:, 4), fode_RTN(:, 5), fode_RTN(:, 6))
-axis equal
-grid on
-view(3)
-xlabel('R-axis [km/s]')
-ylabel('T-axis [km/s]')
-zlabel('N-axis [km/s]')
-title("Deputy's relative velocity in RTN frame centered on chief")
-
-% Modeling the Earth
-[X, Y, Z] = sphere(10);
-
-figure
-surf(X * R_E, Y * R_E, Z * R_E)
-hold on
-plot3(y_abs(:, 1), y_abs(:, 2), y_abs(:, 3))
-plot3(y_abs(:, 7), y_abs(:, 8), y_abs(:, 9))
-axis equal
-grid on
-hold off
-view(3)
-legend('Earth', 'Chief orbit', 'Deputy orbit')
-xlabel('X-axis [km]')
-ylabel('Y-axis [km]')
-zlabel('Z-axis [km]')
-title("Chief's and deputy's orbits around the Earth in ECI frame")
+% figure
+% subplot(3,2,1)
+% plot(t_abs / T, fode_RTN(:, 1))
+% grid on
+% ylabel('R-component of position [km]')
+% 
+% subplot(3,2,3)
+% plot(t_abs / T, fode_RTN(:, 2))
+% grid on
+% ylabel('T-component of position [km]')
+% 
+% subplot(3,2,5)
+% plot(t_abs / T, fode_RTN(:, 3))
+% grid on
+% ylabel('N-component of position [km]')
+% xlabel("Number of chief's orbit")
+% 
+% subplot(3,2,2)
+% plot(t_abs / T, fode_RTN(:, 4))
+% grid on
+% ylabel('R-component of velocity [km/s]')
+% 
+% subplot(3,2,4)
+% plot(t_abs / T, fode_RTN(:, 5))
+% grid on
+% ylabel('T-component of velocity [km/s]')
+% 
+% subplot(3,2,6)
+% plot(t_abs / T, fode_RTN(:, 6))
+% grid on
+% ylabel('N-component of velocity [km/s]')
+% xlabel("Number of chief's orbit")
+% 
+% figure
+% plot3(fode_RTN(:, 1), fode_RTN(:, 2), fode_RTN(:, 3))
+% axis equal
+% grid on
+% view(3)
+% xlabel('R-axis [km]')
+% ylabel('T-axis [km]')
+% zlabel('N-axis [km]')
+% title("Deputy's relative position in RTN frame centered on chief")
+% 
+% figure
+% plot3(fode_RTN(:, 4), fode_RTN(:, 5), fode_RTN(:, 6))
+% axis equal
+% grid on
+% view(3)
+% xlabel('R-axis [km/s]')
+% ylabel('T-axis [km/s]')
+% zlabel('N-axis [km/s]')
+% title("Deputy's relative velocity in RTN frame centered on chief")
+% 
+% % Modeling the Earth
+% [X, Y, Z] = sphere(10);
+% 
+% figure
+% surf(X * R_E, Y * R_E, Z * R_E)
+% hold on
+% plot3(y_abs(:, 1), y_abs(:, 2), y_abs(:, 3))
+% plot3(y_abs(:, 7), y_abs(:, 8), y_abs(:, 9))
+% axis equal
+% grid on
+% hold off
+% view(3)
+% legend('Earth', 'Chief orbit', 'Deputy orbit')
+% xlabel('X-axis [km]')
+% ylabel('Y-axis [km]')
+% zlabel('Z-axis [km]')
+% title("Chief's and deputy's orbits around the Earth in ECI frame")
 
 %% Part d: Numerical errors + new initial conditions
 
-% Checking it's only numerical errors between parts b and c
-figure
-subplot(3,2,1)
-plot(t_abs / T, abs(y(:, 1) - fode_RTN(:, 1)))
-grid on
-ylabel('R-component of position [km]')
-
-subplot(3,2,3)
-plot(t_abs / T, abs(y(:, 2) - fode_RTN(:, 2)))
-grid on
-ylabel('T-component of position [km]')
-
-subplot(3,2,5)
-plot(t_abs / T, abs(y(:, 3) - fode_RTN(:, 3)))
-grid on
-ylabel('N-component of position [km]')
-xlabel("Number of chief's orbit")
-
-subplot(3,2,2)
-plot(t_abs / T, abs(y(:, 4) - fode_RTN(:, 4)))
-grid on
-ylabel('R-component of velocity [km/s]')
-
-subplot(3,2,4)
-plot(t_abs / T, abs(y(:, 5) - fode_RTN(:, 5)))
-grid on
-ylabel('T-component of velocity [km/s]')
-
-subplot(3,2,6)
-plot(t_abs / T, abs(y(:, 6) - fode_RTN(:, 6)))
-grid on
-ylabel('N-component of velocity [km/s]')
-xlabel("Number of chief's orbit")
+% % Checking it's only numerical errors between parts b and c
+% figure
+% subplot(3,2,1)
+% plot(t_abs / T, abs(y(:, 1) - fode_RTN(:, 1)))
+% grid on
+% ylabel('R-component of position [km]')
+% 
+% subplot(3,2,3)
+% plot(t_abs / T, abs(y(:, 2) - fode_RTN(:, 2)))
+% grid on
+% ylabel('T-component of position [km]')
+% 
+% subplot(3,2,5)
+% plot(t_abs / T, abs(y(:, 3) - fode_RTN(:, 3)))
+% grid on
+% ylabel('N-component of position [km]')
+% xlabel("Number of chief's orbit")
+% 
+% subplot(3,2,2)
+% plot(t_abs / T, abs(y(:, 4) - fode_RTN(:, 4)))
+% grid on
+% ylabel('R-component of velocity [km/s]')
+% 
+% subplot(3,2,4)
+% plot(t_abs / T, abs(y(:, 5) - fode_RTN(:, 5)))
+% grid on
+% ylabel('T-component of velocity [km/s]')
+% 
+% subplot(3,2,6)
+% plot(t_abs / T, abs(y(:, 6) - fode_RTN(:, 6)))
+% grid on
+% ylabel('N-component of velocity [km/s]')
+% xlabel("Number of chief's orbit")
 
 %% Part f: Maneuver to establish a bounded periodic relative motion
 
 n_d = sqrt(mu / a_d^3);
 tspan_before = linspace(0, 3 * 2 * pi / n_d, 3000);
 % tspan_before = linspace(0, 3 * T, 3000);
-[t_man_bef, y_man_bef] = ode89(@(t, state) NERM(t, state, mu, n_d), tspan_before, init_cond_rel, options);
+[t_man_bef, y_man_bef] = ode89(@(t, state) NERM(t, state, mu), tspan_before, init_cond_rel, options);
 
 delta_v = - delta_a * n_d * sqrt(1 - e_d) / (2 * sqrt(1 + e_d));
+% delta_v = - delta_a * n_d * norm([y_man_bef(end, 7) 0 0] + y_man_bef(end, 1:3)) / (2 * a_d * sqrt(1 - e_d^2));
 init_cond_maneuver = y_man_bef(end,:) + [0 0 0 0 delta_v 0 0 0 0 0];
 
 tspan_after = linspace(tspan_before(end), 10 * T, 7000);
-[t_man_aft, y_man_aft] = ode89(@(t, state) NERM(t, state, mu, n_d), tspan_after, init_cond_maneuver, options);
+[t_man_aft, y_man_aft] = ode89(@(t, state) NERM(t, state, mu), tspan_after, init_cond_maneuver, options);
+
+init_cond_bef_maneuver = [init_cond_rel init_cond_abs];
+[t_man_bef_2, y_man_bef_2] = ode89(@(t, state) NERM_maneuver(t, state, mu), tspan_before, init_cond_bef_maneuver, options);
+
+maneuver_RTN_d = [0 delta_v 0];
+[a, e, inc, omega, RAAN, nu] = Keplerian_elements(y_man_bef_2(end, 11:16), mu);
+% Computing the RTN frame centered on the chief spacecraft
+R_vec_c = y_man_bef_2(end, 11:13) / norm(y_man_bef_2(end, 11:13));
+N_vec_c = cross(y_man_bef_2(end, 11:13), y_man_bef_2(end, 14:16)) / norm(cross(y_man_bef_2(end, 11:13), y_man_bef_2(end, 14:16)));
+T_vec_c = cross(N_vec_c, R_vec_c);
+rot_ECItoRTN_c = [R_vec_c; T_vec_c; N_vec_c];
+theta_dot_c = [0, 0, sqrt(mu / (a^3 * (1 - e^2)^3)) * (1 + e * cos(nu))^2];
+
+[a, e, inc, omega, RAAN, nu] = Keplerian_elements(y_man_bef_2(end, 17:22), mu);
+% Computing the RTN frame centered on the chief spacecraft
+R_vec_d = y_man_bef_2(end, 17:19) / norm(y_man_bef_2(end, 17:19));
+N_vec_d = cross(y_man_bef_2(end, 17:19), y_man_bef_2(end, 20:22)) / norm(cross(y_man_bef_2(end, 17:19), y_man_bef_2(end, 20:22)));
+T_vec_d = cross(N_vec_d, R_vec_d);
+rot_ECItoRTN_d = [R_vec_d; T_vec_d; N_vec_d];
+% theta_dot_d = [0, 0, - sqrt(mu / (a^3 * (1 - e^2)^3)) * (1 + e * cos(nu))^2];
+
+maneuver_RTN_c = rot_ECItoRTN_c * rot_ECItoRTN_d' * maneuver_RTN_d';
+
+init_cond_aft_maneuver = y_man_bef_2(end, 1:10) + [0 0 0 maneuver_RTN_c' 0 0 0 0];
+[t_man_aft_2, y_man_aft_2] = ode89(@(t, state) NERM(t, state, mu), tspan_after, init_cond_aft_maneuver, options);
+
+
+rel_pos_ECI = rot_ECItoRTN_c' * y_man_aft_2(end, 1:3)';
+rel_vel_ECI = rot_ECItoRTN_c' * (y_man_aft_2(end, 4:6)' + cross(theta_dot_c, y_man_aft_2(end, 1:3))');
+pos_d_ECI = pos_c + rel_pos_ECI'
+vel_d_ECI = vel_c + rel_vel_ECI'
+
+[a, e, inc, omega, RAAN, nu] = Keplerian_elements([pos_d_ECI' vel_d_ECI'], mu);
+
+a - a_c
+
 
 figure
-subplot(3,2,1)
+% plot3([y_man_bef_2(:, 1)' y_man_aft_2(:, 1)'], [y_man_bef_2(:, 2)' y_man_aft_2(:, 2)'], [y_man_bef_2(:, 3)' y_man_aft_2(:, 3)'])
+plot3(y_man_bef_2(:, 1), y_man_bef_2(:, 2), y_man_bef_2(:, 3))
 hold on
-plot(t_man_bef / 3600, y_man_bef(:, 1))
-plot(t_man_aft / 3600, y_man_aft(:, 1))
-hold off
-grid on
-
-subplot(3,2,3)
-hold on
-plot(t_man_bef / 3600, y_man_bef(:, 2))
-plot(t_man_aft / 3600, y_man_aft(:, 2))
-hold off
-grid on
-
-subplot(3,2,5)
-hold on
-plot(t_man_bef / 3600, y_man_bef(:, 3))
-plot(t_man_aft / 3600, y_man_aft(:, 3))
-hold off
-grid on
-
-subplot(3,2,2)
-hold on
-plot(t_man_bef / 3600, y_man_bef(:, 4))
-plot(t_man_aft / 3600, y_man_aft(:, 4))
-hold off
-grid on
-
-subplot(3,2,4)
-hold on
-plot(t_man_bef / 3600, y_man_bef(:, 5))
-plot(t_man_aft / 3600, y_man_aft(:, 5))
-hold off
-grid on
-
-subplot(3,2,6)
-hold on
-plot(t_man_bef / 3600, y_man_bef(:, 6))
-plot(t_man_aft / 3600, y_man_aft(:, 6))
-hold off
-grid on
-
-figure
-hold on
-plot3(y_man_bef(:,1), y_man_bef(:,2), y_man_bef(:,3))
-plot3(y_man_aft(:,1), y_man_aft(:,2), y_man_aft(:,3))
+plot3(y_man_aft_2(:, 1), y_man_aft_2(:, 2), y_man_aft_2(:, 3))
 hold off
 grid on
 axis equal
 xlabel('X-axis [km]')
 ylabel('Y-axis [km]')
 zlabel('Z-axis [km]')
+
+% 
+% figure
+% subplot(3,2,1)
+% hold on
+% plot(t_man_bef / 3600, y_man_bef(:, 1))
+% plot(t_man_aft / 3600, y_man_aft(:, 1))
+% hold off
+% grid on
+% 
+% subplot(3,2,3)
+% hold on
+% plot(t_man_bef / 3600, y_man_bef(:, 2))
+% plot(t_man_aft / 3600, y_man_aft(:, 2))
+% hold off
+% grid on
+% 
+% subplot(3,2,5)
+% hold on
+% plot(t_man_bef / 3600, y_man_bef(:, 3))
+% plot(t_man_aft / 3600, y_man_aft(:, 3))
+% hold off
+% grid on
+% 
+% subplot(3,2,2)
+% hold on
+% plot(t_man_bef / 3600, y_man_bef(:, 4))
+% plot(t_man_aft / 3600, y_man_aft(:, 4))
+% hold off
+% grid on
+% 
+% subplot(3,2,4)
+% hold on
+% plot(t_man_bef / 3600, y_man_bef(:, 5))
+% plot(t_man_aft / 3600, y_man_aft(:, 5))
+% hold off
+% grid on
+% 
+% subplot(3,2,6)
+% hold on
+% plot(t_man_bef / 3600, y_man_bef(:, 6))
+% plot(t_man_aft / 3600, y_man_aft(:, 6))
+% hold off
+% grid on
+% 
+% figure
+% hold on
+% plot3(y_man_bef(:,1), y_man_bef(:,2), y_man_bef(:,3))
+% plot3(y_man_aft(:,1), y_man_aft(:,2), y_man_aft(:,3))
+% hold off
+% grid on
+% axis equal
+% xlabel('X-axis [km]')
+% ylabel('Y-axis [km]')
+% zlabel('Z-axis [km]')
 
 %% Functions
 
@@ -376,7 +428,7 @@ function [pos_inertial, vel_inertial] = OEtoECI(a, e, inc, omega, RAAN, true_ano
     vel_inertial = rot_perifocalTOinertial * vel_perifocal';
 end
 
-function statedot = NERM(t, state, mu, n_d)
+function statedot = NERM(t, state, mu)
     statedot = zeros(size(state));
     rho = state(1:3);
     rho_dot = state(4:6);
@@ -392,6 +444,37 @@ function statedot = NERM(t, state, mu, n_d)
 %     if abs(t / (3 * 2 * pi / n_d) - 3)<1e-9
 %         x = 3-2
 %     end
+
+    r0_ddot = r0 * theta0_dot^2 - mu / r0^2;
+    statedot(8) = r0_ddot;
+    theta0_ddot = - 2 * r0_dot * theta0_dot / r0;
+    statedot(10) = theta0_ddot;
+    
+    denom = (sqrt((r0 + rho(1))^2 + rho(2)^2 + rho(3)^2))^3;
+    statedot(4) = 2 * theta0_dot * state(5) + theta0_ddot * rho(2) + theta0_dot^2 * rho(1) - mu * (r0 + rho(1)) / denom + mu / r0^2;
+    statedot(5) = - 2 * theta0_dot * state(4) - theta0_ddot * rho(1) + theta0_dot^2 * rho(2) - mu * rho(2) / denom;
+    statedot(6) = - mu * rho(3) / denom;
+end
+
+function statedot = NERM_maneuver(t, state, mu)
+    statedot = zeros(size(state));
+    rho = state(1:3);
+    rho_dot = state(4:6);
+    r0 = state(7);
+    r0_dot = state(8);
+    theta0 = state(9);
+    theta0_dot = state(10);
+    state_chief = state(11:16);
+    state_deputy = state(17:22);
+
+    statedot(1:3) = rho_dot;
+    statedot(7) = r0_dot;
+    statedot(9) = theta0_dot;
+    statedot(11:13) = state(14:16);
+    statedot(17:19) = state(20:22);
+
+    statedot(14:16) = - mu * state(11:13) / norm(state(11:13))^3;
+    statedot(20:22) = - mu * state(17:19) / norm(state(17:19))^3;
 
     r0_ddot = r0 * theta0_dot^2 - mu / r0^2;
     statedot(8) = r0_ddot;
