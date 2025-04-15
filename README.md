@@ -1,0 +1,1 @@
+Hi! Welcome to the GitHub repository with the code developped by Pauline de la HOGUE MORAN for the project in the context of the AA279D DGNC of Distributive Space Systems class at Stanford University.
