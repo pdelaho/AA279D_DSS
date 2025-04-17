@@ -1,3 +1,4 @@
 function path_config
-    addpath('mean_osc')
+    addpath('functions')
+    addpath('functions/mean_osc')
 end

@@ -1,6 +1,7 @@
 %% Problem 1  
 
 close all; clc; clear;
+path_config;
 mu = 398600.435436; % km^3/s^2
 R_E = 6378; % km
 
