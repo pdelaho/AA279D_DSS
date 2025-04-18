@@ -730,31 +730,31 @@ function E = eccentric_anom(M, e, epsilon)
     end
 end
 
-function [pos_inertial, vel_inertial] = OEtoECI(a, e, inc, omega, RAAN, true_anom, mu)
-    cosE = (e + cos(true_anom)) / (1 + e * cos(true_anom));
-    sinE = sin(true_anom) * sqrt(1 - e^2) / (1 + e * cos(true_anom));
-    n = sqrt(mu / a^3);
-    
-    % Computing the position and velocity vectors in the perifocal frame
-    pos_perifocal = [a * (cosE - e) a * sqrt(1 - e^2) * sinE 0];
-    vel_perifocal = a * n / (1 - e * cosE) * [-sinE sqrt(1 - e^2)*cosE 0];
-    
-    % Computing the rotation matrix between perifocal and inertial frame
-    rotRAAN = [cos(RAAN) sin(-RAAN) 0;
-               -sin(-RAAN) cos(RAAN) 0;
-               0 0 1];
-    roti = [1 0 0;
-            0 cos(inc) sin(-inc);
-            0 -sin(-inc) cos(inc)];
-    rotomega = [cos(omega) sin(-omega) 0;
-                -sin(-omega) cos(omega) 0;
-                0 0 1];
-    rot_perifocalTOinertial = rotRAAN * roti * rotomega;
-
-    % Rotating the position and velocity vectors
-    pos_inertial = rot_perifocalTOinertial * pos_perifocal';
-    vel_inertial = rot_perifocalTOinertial * vel_perifocal';
-end
+% function [pos_inertial, vel_inertial] = OEtoECI(a, e, inc, omega, RAAN, true_anom, mu)
+%     cosE = (e + cos(true_anom)) / (1 + e * cos(true_anom));
+%     sinE = sin(true_anom) * sqrt(1 - e^2) / (1 + e * cos(true_anom));
+%     n = sqrt(mu / a^3);
+%     
+%     % Computing the position and velocity vectors in the perifocal frame
+%     pos_perifocal = [a * (cosE - e) a * sqrt(1 - e^2) * sinE 0];
+%     vel_perifocal = a * n / (1 - e * cosE) * [-sinE sqrt(1 - e^2)*cosE 0];
+%     
+%     % Computing the rotation matrix between perifocal and inertial frame
+%     rotRAAN = [cos(RAAN) sin(-RAAN) 0;
+%                -sin(-RAAN) cos(RAAN) 0;
+%                0 0 1];
+%     roti = [1 0 0;
+%             0 cos(inc) sin(-inc);
+%             0 -sin(-inc) cos(inc)];
+%     rotomega = [cos(omega) sin(-omega) 0;
+%                 -sin(-omega) cos(omega) 0;
+%                 0 0 1];
+%     rot_perifocalTOinertial = rotRAAN * roti * rotomega;
+% 
+%     % Rotating the position and velocity vectors
+%     pos_inertial = rot_perifocalTOinertial * pos_perifocal';
+%     vel_inertial = rot_perifocalTOinertial * vel_perifocal';
+% end
 
 function statedot = GVEderJ2(t, state, mu, J2, R_E)
     statedot = zeros(size(state));
