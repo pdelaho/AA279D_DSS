@@ -7,21 +7,22 @@ R_E = 6378; % km
 J2 = 0.108263e-2;
 
 %% Part a: Orbital elements
-% Change it to the actual values from the chosen mission
-a = 36943; % km, semi-major axis
-e = 0.8111; % eccentricity
-inc = deg2rad(59); % inclination
-omega = deg2rad(188); % argument of periapsis
-RAAN = deg2rad(84); % right ascension of the ascending node
-true_anom = 0; % true anomaly
+
+a = 36943; % km
+e = 0.8111;
+inc = deg2rad(59);
+omega = deg2rad(188);
+RAAN = deg2rad(84);
+nu = 0;
+n = sqrt(mu / a^3);
+T = 2 * pi / n;
 
 %% Part b: Initial position and velocity in inertial frame
-n = sqrt(mu / a^3); % mean motion
-T = 2 * pi / n; % orbital period
 
-[pos_inertial, vel_inertial] = OEtoECI(a, e, inc, omega, RAAN, true_anom, mu);
+[pos_inertial, vel_inertial] = OEtoECI(a, e, inc, omega, RAAN, nu, mu);
 
 %% Part c: Orbit propagation with and without J2 effects
+
 % Numerical propgation without J2 effects
 init_state = [pos_inertial' vel_inertial'];
 options = odeset('RelTol', 1e-3, 'AbsTol', 1e-6, 'MaxStep', 100);
@@ -49,70 +50,72 @@ legend('Earth', 'Unperturbed orbit', 'Perturbed orbit')
 xlabel('X-axis [km]')
 ylabel('Y-axis [km]')
 zlabel('Z-axis [km]')
-title('Unperturbed and J2-perturbed orbits around the Earth in ECI frame')
+% title('Unperturbed and J2-perturbed orbits around the Earth in ECI frame')
 
 figure
 subplot(3,2,1)
 hold on
-plot(t_unpert / 3600, y_unpert(:, 1))
-plot(t_unpert / 3600, y_pert(:, 1))
+plot(t_unpert / T, y_unpert(:, 1))
+plot(t_pert / T, y_pert(:, 1))
 hold off
 grid on
 legend('No J2', 'J2')
-ylabel('X-axis position component [km]')
+ylabel('X-axis component [km]')
+title('Position')
 
 subplot(3,2,3)
 hold on
-plot(t_unpert / 3600, y_unpert(:, 2))
-plot(t_unpert / 3600, y_pert(:, 2))
+plot(t_unpert / T, y_unpert(:, 2))
+plot(t_pert / T, y_pert(:, 2))
 hold off
 grid on
 legend('No J2', 'J2')
-ylabel('Y-axis position component [km]')
+ylabel('Y-axis component [km]')
 
 subplot(3,2,5)
 hold on
-plot(t_unpert / 3600, y_unpert(:, 3))
-plot(t_unpert / 3600, y_pert(:, 3))
+plot(t_unpert / T, y_unpert(:, 3))
+plot(t_pert / T, y_pert(:, 3))
 hold off
 grid on
 legend('No J2', 'J2')
-ylabel('Z-axis position component [km]')
-xlabel('Time [hours]')
+ylabel('Z-axis component [km]')
+xlabel('Orbital Periods')
 
 subplot(3,2,2)
 hold on
-plot(t_unpert / 3600, y_unpert(:, 4))
-plot(t_unpert / 3600, y_pert(:, 4))
+plot(t_unpert / T, y_unpert(:, 4))
+plot(t_pert / T, y_pert(:, 4))
 hold off
 grid on
 legend('No J2', 'J2')
-ylabel('X-axis velocity component [km/s]')
+ylabel('X-axis component [km/s]')
+title('Velocity')
 
 subplot(3,2,4)
 hold on
-plot(t_unpert / 3600, y_unpert(:, 5))
-plot(t_unpert / 3600, y_pert(:, 5))
+plot(t_unpert / T, y_unpert(:, 5))
+plot(t_pert / T, y_pert(:, 5))
 hold off
 grid on
 legend('No J2', 'J2')
-ylabel('Y-axis velocity component [km/s]')
+ylabel('Y-axis component [km/s]')
 
 subplot(3,2,6)
 hold on
-plot(t_unpert / 3600, y_unpert(:, 6))
-plot(t_unpert / 3600, y_pert(:, 6))
+plot(t_unpert / T, y_unpert(:, 6))
+plot(t_pert / T, y_pert(:, 6))
 hold off
 grid on
 legend('No J2', 'J2')
-ylabel('Z-axis velocity component [km/s]')
-xlabel('Time [hours]')
+ylabel('Z-axis component [km/s]')
+xlabel('Orbital Periods')
 
-sgtitle('Comparison of the components of the position and velocity in ECI with and without J2 effects over 10 orbits')
+% sgtitle('Comparison of the components of the position and velocity in ECI with and without J2 effects over 10 orbits')
 
 %% Part d: Analytical Keplerian propagation
 M_unpert = n * t_unpert;
-E_unpert = zeros(N_unpert, 1);
+% E_unpert = zeros(N_unpert, 1);
 true_anom_unpert = zeros(N_unpert, 1);
 y_unpert_Kep = zeros(size(y_unpert));
 errors_RTN = zeros(size(y_unpert));
@@ -120,7 +123,7 @@ errors_RTN = zeros(size(y_unpert));
 for i=1:N_unpert
     % Computing the eccentric anomaly
     E = eccentric_anom(M_unpert(i), e, 1e-10);
-    E_unpert(i) = E;
+%     E_unpert(i) = E;
 
     % Computing the true anomaly
     cos_nu = (cos(E) - e) / (1 - e * cos(E));
@@ -155,38 +158,40 @@ end
 
 figure
 subplot(3,2,1)
-plot(t_unpert / 3600, errors_RTN(:, 1))
+plot(t_unpert / T, errors_RTN(:, 1))
 grid on
-ylabel('Position error along R [km]')
+ylabel('R-direction [km]')
+title('Error in position')
 
 subplot(3,2,3)
-plot(t_unpert / 3600, errors_RTN(:, 2))
+plot(t_unpert / T, errors_RTN(:, 2))
 grid on
-ylabel('Position error along T [km]')
+ylabel('T-direction [km]')
 
 subplot(3,2,5)
-plot(t_unpert / 3600, errors_RTN(:, 3))
+plot(t_unpert / T, errors_RTN(:, 3))
 grid on
-ylabel('Position error along N [km]')
-xlabel('Time [hours]')
+ylabel('N-direction [km]')
+xlabel('Orbital Periods')
 
 subplot(3,2,2)
-plot(t_unpert / 3600, errors_RTN(:, 4))
+plot(t_unpert / T, errors_RTN(:, 4))
 grid on
-ylabel('Velocity error along R [km/s]')
+ylabel('R-direction [km/s]')
+title('Error in velocity')
 
 subplot(3,2,4)
-plot(t_unpert / 3600, errors_RTN(:, 5))
+plot(t_unpert / T, errors_RTN(:, 5))
 grid on
-ylabel('Velocity error along T [km/s]')
+ylabel('T-direction [km/s]')
 
 subplot(3,2,6)
-plot(t_unpert / 3600, errors_RTN(:, 6))
+plot(t_unpert / T, errors_RTN(:, 6))
 grid on
 ylabel('Velocity error along N [km/s]')
-xlabel('Time [hours]')
+xlabel('Orbital Periods')
 
-sgtitle('Error in position and velocity in the RTN frame between the analytical and numerical methods')
+% sgtitle('Error in position and velocity in the RTN frame between the analytical and numerical methods')
 
 %% Part e: Computing quantities throughout the orbit (un)perturbed
 Kep_ele_unpert = zeros(N_unpert, 6);
@@ -517,7 +522,7 @@ xlabel('Time [hours]')
 title('Osculating vs Mean specific mechanical energy')
 
 %% Part g: GVE with mean initial elements
-OE = [a * 1e3, e, inc, RAAN, omega, true_anom];
+OE = [a * 1e3, e, inc, RAAN, omega, nu];
 init_OE = osc2mean(OE);
 a_mean = init_OE(1) / 1e3;
 e_mean = init_OE(2);
@@ -721,39 +726,13 @@ function [a, e, i, omega, RAAN, M] = Keplerian_elements(state, mu)
     omega = wrapTo2Pi(u - nu);
 end
 
-function E = eccentric_anom(M, e, epsilon)
-    M = wrapTo2Pi(M);
-    E = pi;
-    while abs(- E + e * sin(E) + M) / (1 - e * cos(E)) > epsilon
-        E_new = E - (E - e * sin(E) - M) / (1 - e * cos(E));
-        E = E_new;
-    end
-end
-
-% function [pos_inertial, vel_inertial] = OEtoECI(a, e, inc, omega, RAAN, true_anom, mu)
-%     cosE = (e + cos(true_anom)) / (1 + e * cos(true_anom));
-%     sinE = sin(true_anom) * sqrt(1 - e^2) / (1 + e * cos(true_anom));
-%     n = sqrt(mu / a^3);
-%     
-%     % Computing the position and velocity vectors in the perifocal frame
-%     pos_perifocal = [a * (cosE - e) a * sqrt(1 - e^2) * sinE 0];
-%     vel_perifocal = a * n / (1 - e * cosE) * [-sinE sqrt(1 - e^2)*cosE 0];
-%     
-%     % Computing the rotation matrix between perifocal and inertial frame
-%     rotRAAN = [cos(RAAN) sin(-RAAN) 0;
-%                -sin(-RAAN) cos(RAAN) 0;
-%                0 0 1];
-%     roti = [1 0 0;
-%             0 cos(inc) sin(-inc);
-%             0 -sin(-inc) cos(inc)];
-%     rotomega = [cos(omega) sin(-omega) 0;
-%                 -sin(-omega) cos(omega) 0;
-%                 0 0 1];
-%     rot_perifocalTOinertial = rotRAAN * roti * rotomega;
-% 
-%     % Rotating the position and velocity vectors
-%     pos_inertial = rot_perifocalTOinertial * pos_perifocal';
-%     vel_inertial = rot_perifocalTOinertial * vel_perifocal';
+% function E = eccentric_anom(M, e, epsilon)
+%     M = wrapTo2Pi(M);
+%     E = pi;
+%     while abs(- E + e * sin(E) + M) / (1 - e * cos(E)) > epsilon
+%         E_new = E - (E - e * sin(E) - M) / (1 - e * cos(E));
+%         E = E_new;
+%     end
 % end
 
 function statedot = GVEderJ2(t, state, mu, J2, R_E)

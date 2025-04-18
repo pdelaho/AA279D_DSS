@@ -19,7 +19,6 @@ n_c = sqrt(mu / a_c^3);
 % For the deputy
 delta_a = 0;
 delta_e = - e_c * 0.00001 * a_c
-% delta_e = 0;
 delta_i = deg2rad(0.0005) * a_c
 delta_omega = 0;
 delta_RAAN = - deg2rad(0.001) * a_c
@@ -92,7 +91,7 @@ int_const = (STM_YA(nu_c, e_c, 0, n_c, M_1))^(-1) * [rho_RTN; rho_dot_RTN]
 M_2_inv = [2*k^2*(k+1)/eta^2, 2*k^2*k_prime/eta^2, 0, -2*k_prime/eta^2, 2*k/eta^2, 0;
            (1-(k+1)^2/eta^2)*sin(nu_c), -(k+1)*k_prime/eta^2*sin(nu_c), 0, 1/eta^2*(cos(nu_c)-2*e_c/k), -1/eta^2*(1+1/k)*sin(nu_c), 0;
            -k/eta^2*(2*e_c + (2+k)*cos(nu_c)), -k_prime/eta^2*(e_c + (k+1)*cos(nu_c)), 0, -sin(nu_c)/eta^2, -1/eta^2*(e_c/k + (1+1/k)*cos(nu_c)), 0;
-           (k+1)^2*k_prime/eta^2, k/eta^2*(2+k-k^2), 0, 1/eta^2*(k-1-2/k), k_prime/eta^2*(1+1/k), 0;
+           (k+1)^2*k_prime/eta^2, k/eta^2*(2+k-k^2)-1, 0, 1/eta^2*(k-1-2/k), k_prime/eta^2*(1+1/k), 0;
            0, 0, sin(nu_c), 0, 0, cos(nu_c)/k;
            0, 0, e_c+cos(nu_c), 0, 0, -sin(nu_c)/k];
 int_const_2 = M_2_inv * [1/ (a_c * eta^2) * eye(3), zeros(3); zeros(3), eta/(a_c*n_c)*eye(3)] * [rho_RTN; rho_dot_RTN]
@@ -120,6 +119,7 @@ for i=1:N
     relative_motion_2(i, :) = STM * int_const_2;
 end
 
+% Maybe put a star at (0,0,0) to indicate where the chief is?
 figure
 subplot(2,2,1)
 plot(relative_motion(:, 2), relative_motion(:, 1))

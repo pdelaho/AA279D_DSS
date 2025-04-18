@@ -26,12 +26,12 @@ function [position_ECI, velocity_ECI] = OEtoECI(a, e, inc, omega, RAAN, nu, mu)
     velocity_perifocal = a * n / (1 - e * cosE) * [-sinE, sqrt(1 - e^2) * cosE, 0];
     
     % Rotation matrix between perifocal and inertial frame
-    rotation_RAAN = [cos(RAAN) sin(-RAAN) 0;
-               -sin(-RAAN) cos(RAAN) 0;
-               0 0 1];
-    rotation_i = [1 0 0;
-            0 cos(inc) sin(-inc);
-            0 -sin(-inc) cos(inc)];
+    rotation_RAAN = [  cos(RAAN) sin(-RAAN) 0;
+                	 -sin(-RAAN)  cos(RAAN) 0;
+                               0          0 1];
+    rotation_i = [1          0         0;
+                  0   cos(inc) sin(-inc);
+                  0 -sin(-inc)  cos(inc)];
     rotation_omega = [cos(omega) sin(-omega) 0;
                 -sin(-omega) cos(omega) 0;
                 0 0 1];
