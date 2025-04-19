@@ -10,7 +10,7 @@
 %   Outputs:
 %       E - eccentric anomaly [rad]
 
-function E = eccentric_anomaly(M, e, epsilon)
+function E = MtoE(M, e, epsilon)
 
     M = wrapTo2Pi(M);
     E = pi;

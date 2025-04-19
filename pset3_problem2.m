@@ -13,16 +13,17 @@ inc_c = deg2rad(59);
 omega_c = deg2rad(188);
 RAAN_c = deg2rad(84);
 nu_c = deg2rad(0);
+M_c = 0;
 T = 2 * pi * sqrt(a_c^3 / mu);
 n_c = sqrt(mu / a_c^3);
 
 % For the deputy
 delta_a = 0;
-delta_e = - e_c * 0.00001 * a_c
-delta_i = deg2rad(0.0005) * a_c
+delta_e = - e_c * 0.00001 * a_c;
+delta_i = deg2rad(0.0005) * a_c;
 delta_omega = 0;
-delta_RAAN = - deg2rad(0.001) * a_c
-delta_nu = deg2rad(-0.00016) * a_c
+delta_RAAN = - deg2rad(0.001) * a_c;
+delta_nu = deg2rad(-0.00016) * a_c;
 
 % Inertial position and velocity in ECI
 a_d = a_c + delta_a;
@@ -31,6 +32,8 @@ inc_d = inc_c + delta_i / a_c;
 omega_d = omega_c + delta_omega / a_c;
 RAAN_d = RAAN_c + delta_RAAN / a_c;
 nu_d = nu_c + delta_nu / a_c;
+E_d = atan2(sin(nu_d)*sqrt(1-e_d^2)/(1+e_d*cos(nu_d)), (e_d+cos(nu_d))/(1+e_d*cos(nu_d)));
+M_d = E_d - e_d * sin(E_d);
 
 [pos_chief, vel_chief] = OEtoECI(a_c, e_c, inc_c, omega_c, RAAN_c, nu_c, mu);
 [pos_deputy, vel_deputy] = OEtoECI(a_d, e_d, inc_d, omega_d, RAAN_d, nu_d, mu);
@@ -112,7 +115,7 @@ relative_motion_2 = zeros(N, 6);
 
 for i=1:N
     M = wrapTo2Pi(n_c * tspan(i));
-    E = eccentric_anom(M, e_c, 1e-12);
+    E = MtoE(M, e_c, 1e-12);
     nu = atan2(sin(E)*sqrt(1-e_c^2)/(1-e_c*cos(E)), (cos(E)-e_c)/(1-e_c*cos(E)));
     STM = STM_YA(nu, e_c, tspan(i), n_c, M_1);
     relative_motion(i, :) = STM * int_const;
@@ -182,6 +185,19 @@ xlabel('R-axis')
 ylabel('T-axis')
 zlabel('N-axis')
 
+%% Part e: Relative Orbital Elements
+
+ROE = [(a_d - a_c) / a_c;
+        M_d + omega_d - M_c - omega_c + (RAAN_d - RAAN_c) * cos(inc_c);
+        e_d * cos(omega_d) - e_c * cos(omega_c);
+        e_d * sin(omega_d) - e_c * cos(omega_c);
+        inc_d - inc_c;
+        (RAAN_d - RAAN_c) * sin(inc_c)]
+
+%% Part f: Propagating ROEs using linear mapping
+
+
+
 %% Functions
 
 function M = STM_YA(f, e, t, n, M_1)
@@ -197,13 +213,4 @@ function M = STM_YA(f, e, t, n, M_1)
                -3/2*(k+k^2*k_prime*tau), -(k^2+1)*sin(f), -e-(k^2+1)*cos(f), k_prime,          0,          0;
                                      0,               0,                 0,       0,   e+cos(f),    -sin(f)];
     M = M_1 * M_2;
-end
-
-function E = eccentric_anom(M, e, epsilon)
-    M = wrapTo2Pi(M);
-    E = pi;
-    while abs(- E + e * sin(E) + M) / (1 - e * cos(E)) > epsilon
-        E_new = E - (E - e * sin(E) - M) / (1 - e * cos(E));
-        E = E_new;
-    end
 end

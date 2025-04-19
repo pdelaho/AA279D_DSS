@@ -19,20 +19,18 @@ T = 2 * pi / n;
 
 %% Part b: Initial position and velocity in inertial frame
 
-[pos_inertial, vel_inertial] = OEtoECI(a, e, inc, omega, RAAN, nu, mu);
+[position_ECI, velocity_ECI] = OEtoECI(a, e, inc, omega, RAAN, nu, mu);
 
 %% Part c: Orbit propagation with and without J2 effects
 
 % Numerical propgation without J2 effects
-init_state = [pos_inertial' vel_inertial'];
+init_state = [position_ECI' velocity_ECI'];
 options = odeset('RelTol', 1e-3, 'AbsTol', 1e-6, 'MaxStep', 100);
-N_unpert = 10000;
-tspan = linspace(0, 10 * T, N_unpert);
+N = 10000;
+tspan = linspace(0, 10 * T, N);
 [t_unpert, y_unpert] = ode89(@(t, state) state_der_posvel(t, state, mu), tspan, init_state, options);
 
 % Numerical propagation with J2 effects
-N_pert = 10000;
-tspan = linspace(0, 10 * T, N_pert);
 [t_pert, y_pert] = ode89(@(t, state) state_der_posvel_J2(t, state, mu, J2, R_E), tspan, init_state, options);
 
 % Modeling the Earth
@@ -114,26 +112,21 @@ xlabel('Orbital Periods')
 % sgtitle('Comparison of the components of the position and velocity in ECI with and without J2 effects over 10 orbits')
 
 %% Part d: Analytical Keplerian propagation
+
 M_unpert = n * t_unpert;
-% E_unpert = zeros(N_unpert, 1);
-true_anom_unpert = zeros(N_unpert, 1);
-y_unpert_Kep = zeros(size(y_unpert));
 errors_RTN = zeros(size(y_unpert));
 
-for i=1:N_unpert
+for i=1:N
     % Computing the eccentric anomaly
-    E = eccentric_anom(M_unpert(i), e, 1e-10);
-%     E_unpert(i) = E;
+    E = MtoE(M_unpert(i), e, 1e-10);
 
     % Computing the true anomaly
     cos_nu = (cos(E) - e) / (1 - e * cos(E));
     sin_nu = sqrt(1 - e^2) * sin(E) / (1 - e * cos(E));
     nu = atan2(sin_nu, cos_nu);
-    true_anom_unpert(i) = nu;
 
     % Computing the position and velocity vectors in the inertial frame
     [pos, vel] = OEtoECI(a, e, inc, omega, RAAN, nu, mu);
-    y_unpert_Kep(i, :) = [pos' vel'];
 
     % Defining the RTN frame and rotation matrix
     R_vec = pos / norm(pos);
@@ -142,18 +135,15 @@ for i=1:N_unpert
     rot = [R_vec'; T_vec'; N_vec'];
 
     % Computing the angular velocity vector of inertial w.r.t. RTN
-    theta_dot_vec = [0 0 -sqrt(mu / (a^3 * (1 - e^2)^3)) * (1 + e * cos(nu))^2];
-
-    % Transforming the position and velocity vectors from inertial to RTN
-    pos_RTN = rot * y_unpert(i, 1:3)';
-    vel_RTN = rot * y_unpert(i, 4:6)' + cross(theta_dot_vec, pos_RTN)';
-    pos_RTN_Kep = rot * y_unpert_Kep(i, 1:3)';
-    vel_RTN_Kep = rot * y_unpert_Kep(i, 4:6)' + cross(theta_dot_vec, pos_RTN_Kep)';
+    theta_dot_vec = [0 0 sqrt(mu / (a^3 * (1 - e^2)^3)) * (1 + e * cos(nu))^2];
 
     % Computing the errors in RTN frame
-    error_pos = abs(pos_RTN - pos_RTN_Kep);
-    error_vel = abs(vel_RTN - vel_RTN_Kep);
-    errors_RTN(i, :) = [error_pos' error_vel'];
+    error_pos_ECI = y_unpert(i, 1:3)' - pos;
+    error_vel_ECI = y_unpert(i, 4:6)' - vel;
+    error_pos_RTN = rot * error_pos_ECI;
+    error_vel_RTN = rot * error_vel_ECI - cross(theta_dot_vec, error_pos_RTN')';
+
+    errors_RTN(i, :) = [abs(error_pos_RTN') abs(error_vel_RTN')];
 end
 
 figure
@@ -188,34 +178,34 @@ ylabel('T-direction [km/s]')
 subplot(3,2,6)
 plot(t_unpert / T, errors_RTN(:, 6))
 grid on
-ylabel('Velocity error along N [km/s]')
+ylabel('N-direction [km/s]')
 xlabel('Orbital Periods')
 
 % sgtitle('Error in position and velocity in the RTN frame between the analytical and numerical methods')
 
 %% Part e: Computing quantities throughout the orbit (un)perturbed
-Kep_ele_unpert = zeros(N_unpert, 6);
-ecc_vec_unpert = zeros(N_unpert, 3);
-ang_mom_unpert = zeros(N_unpert, 3);
-spec_energy_unpert = zeros(N_unpert, 1);
+Kep_ele_unpert = zeros(N, 6);
+ecc_vec_unpert = zeros(N, 3);
+ang_mom_unpert = zeros(N, 3);
+spec_energy_unpert = zeros(N, 1);
 
-for i=1:N_unpert
+for i=1:N
     pos = y_unpert(i, 1:3);
     vel = y_unpert(i, 4:6);
     [a_unpert, e_unpert, inc_unpert, omega_unpert, RAAN_unpert, M_unpert] = Keplerian_elements(y_unpert(i,:), mu);
-    Kep_ele_unpert(i, :) = [a_unpert, e_unpert, inc_unpert, omega_unpert, RAAN_unpert, M_unpert]';
+    Kep_ele_unpert(i, :) = [a_unpert, e_unpert, inc_unpert, omega_unpert, RAAN_unpert, M_unpert];
     ecc_vec_unpert(i, :) = cross(vel, cross(pos, vel)) / mu - pos / norm(pos);
     % Or should we keep it in the perifocal coordinate?
     ang_mom_unpert(i, :) = cross(pos, vel);
     spec_energy_unpert(i) = norm(vel)^2 / 2 - mu / norm(pos);
 end
 
-Kep_ele_pert = zeros(N_pert, 6);
-ecc_vec_pert = zeros(N_pert, 3);
-ang_mom_pert = zeros(N_pert, 3);
-spec_energy_pert = zeros(N_pert, 1);
+Kep_ele_pert = zeros(N, 6);
+ecc_vec_pert = zeros(N, 3);
+ang_mom_pert = zeros(N, 3);
+spec_energy_pert = zeros(N, 1);
 
-for i=1:N_pert
+for i=1:N
     pos = y_pert(i, 1:3);
     vel = y_pert(i, 4:6);
     [a_pert, e_pert, inc_pert, omega_pert, RAAN_pert, M_pert] = Keplerian_elements(y_pert(i,:), mu);
@@ -359,18 +349,18 @@ title('Specific mechanical energy in ECI with and without J2 effects')
 
 %% Part f: GVE with J2 effects
 init_nonmodified_OE = [a e * cos(omega) e * sin(omega) inc RAAN omega + 0];
-tspan = linspace(0, 10 * T, N_pert);
+tspan = linspace(0, 10 * T, N);
 [t_pert_nonmodified_OE, y_pert_nonmodified_OE] = ode89(@(t, state) GVEderJ2(t, state, mu, J2, R_E), tspan, init_nonmodified_OE, options);
 
-ecc_pert_nonmodified_GVE = zeros(N_pert, 1);
-ecc_vec_pert_nonmodified_GVE = zeros(N_pert, 3);
-omega_pert_nonmodified_GVE = zeros(N_pert, 1);
-mean_anom_nonmodified_GVE = zeros(N_pert, 1);
-true_anom_pert_nonmodified_GVE = zeros(N_pert, 1);
-ang_mom_pert_nonmodified_GVE = zeros(N_pert, 3);
-spec_energy_pert_nonmodified_GVE = zeros(N_pert, 1);
+ecc_pert_nonmodified_GVE = zeros(N, 1);
+ecc_vec_pert_nonmodified_GVE = zeros(N, 3);
+omega_pert_nonmodified_GVE = zeros(N, 1);
+mean_anom_nonmodified_GVE = zeros(N, 1);
+true_anom_pert_nonmodified_GVE = zeros(N, 1);
+ang_mom_pert_nonmodified_GVE = zeros(N, 3);
+spec_energy_pert_nonmodified_GVE = zeros(N, 1);
 
-for i=1:N_pert
+for i=1:N
     ecc = sqrt(y_pert_nonmodified_OE(i, 2)^2 + y_pert_nonmodified_OE(i, 3)^2);
     ecc_pert_nonmodified_GVE(i) = ecc;
     omega_pert = atan2(y_pert_nonmodified_OE(i, 3), y_pert_nonmodified_OE(i, 2));
@@ -534,15 +524,15 @@ M_mean = init_OE(6);
 init_modified_OE = [a_mean e_mean * cos(omega_mean) e_mean * sin(omega_mean) inc_mean RAAN_mean omega_mean + M_mean];
 [t_pert_OE, y_pert_OE] = ode89(@(t, state) GVEderJ2(t, state, mu, J2, R_E), tspan, init_modified_OE, options);
 
-ecc_pert_GVE = zeros(N_pert, 1);
-ecc_vec_pert_GVE = zeros(N_pert, 3);
-omega_pert_GVE = zeros(N_pert, 1);
-mean_anom_GVE = zeros(N_pert, 1);
-true_anom_pert_GVE = zeros(N_pert, 1);
-ang_mom_pert_GVE = zeros(N_pert, 3);
-spec_energy_pert_GVE = zeros(N_pert, 1);
+ecc_pert_GVE = zeros(N, 1);
+ecc_vec_pert_GVE = zeros(N, 3);
+omega_pert_GVE = zeros(N, 1);
+mean_anom_GVE = zeros(N, 1);
+true_anom_pert_GVE = zeros(N, 1);
+ang_mom_pert_GVE = zeros(N, 3);
+spec_energy_pert_GVE = zeros(N, 1);
 
-for i=1:N_pert
+for i=1:N
     ecc = sqrt(y_pert_OE(i, 2)^2 + y_pert_OE(i, 3)^2);
     ecc_pert_GVE(i) = ecc;
     omega_pert = atan2(y_pert_OE(i, 3), y_pert_OE(i, 2));
@@ -726,15 +716,6 @@ function [a, e, i, omega, RAAN, M] = Keplerian_elements(state, mu)
     omega = wrapTo2Pi(u - nu);
 end
 
-% function E = eccentric_anom(M, e, epsilon)
-%     M = wrapTo2Pi(M);
-%     E = pi;
-%     while abs(- E + e * sin(E) + M) / (1 - e * cos(E)) > epsilon
-%         E_new = E - (E - e * sin(E) - M) / (1 - e * cos(E));
-%         E = E_new;
-%     end
-% end
-
 function statedot = GVEderJ2(t, state, mu, J2, R_E)
     statedot = zeros(size(state));
     a = state(1);
@@ -750,7 +731,7 @@ function statedot = GVEderJ2(t, state, mu, J2, R_E)
 end
 
 function [pos_inertial, vel_inertial] = OEtoECI_meananomaly(a, e, inc, omega, RAAN, M, mu)
-    E = eccentric_anom(M, e, 1e-10);
+    E = MtoE(M, e, 1e-10);
     n = sqrt(mu / a^3);
     
     % Computing the position and velocity vectors in the perifocal frame
