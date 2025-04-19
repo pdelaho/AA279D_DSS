@@ -1,4 +1,4 @@
-% eccentric_anomaly computes the eccentric anomaly using the Newton-Raphson
+% M2E computes the eccentric anomaly using the Newton-Raphson
 % method, knowing the mean anomaly and eccentricity of the spacecraft given 
 % a tolerance epsilon.
 %
@@ -10,7 +10,7 @@
 %   Outputs:
 %       E - eccentric anomaly [rad]
 
-function E = MtoE(M, e, epsilon)
+function E = M2E(M, e, epsilon)
 
     M = wrapTo2Pi(M);
     E = pi;

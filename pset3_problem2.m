@@ -87,8 +87,8 @@ norm(rho_RTN) / (0.001 * a_c)
 k = 1 + e_c * cos(nu_c);
 k_prime = - e_c * sin(nu_c);
 eta = sqrt(1 - e_c^2);
-M_1 = [a_c * eta * eye(3), zeros(3);
-       zeros(3), a_c * n_c / eta * eye(3)];
+M_1 = [a_c * eta^2 * eye(3), zeros(3);
+       zeros(3), a_c * n_c / eta * eye(3)]
 int_const = (STM_YA(nu_c, e_c, 0, n_c, M_1))^(-1) * [rho_RTN; rho_dot_RTN]
 
 M_2_inv = [2*k^2*(k+1)/eta^2, 2*k^2*k_prime/eta^2, 0, -2*k_prime/eta^2, 2*k/eta^2, 0;
@@ -115,12 +115,15 @@ relative_motion_2 = zeros(N, 6);
 
 for i=1:N
     M = wrapTo2Pi(n_c * tspan(i));
-    E = MtoE(M, e_c, 1e-12);
+    E = M2E(M, e_c, 1e-12);
     nu = atan2(sin(E)*sqrt(1-e_c^2)/(1-e_c*cos(E)), (cos(E)-e_c)/(1-e_c*cos(E)));
     STM = STM_YA(nu, e_c, tspan(i), n_c, M_1);
     relative_motion(i, :) = STM * int_const;
     relative_motion_2(i, :) = STM * int_const_2;
 end
+
+STM_YA(pi/4,e_c,10,n_c,M_1)
+
 
 % Maybe put a star at (0,0,0) to indicate where the chief is?
 figure
@@ -185,6 +188,37 @@ xlabel('R-axis')
 ylabel('T-axis')
 zlabel('N-axis')
 
+figure
+subplot(2,2,1)
+plot(relative_motion_2(:, 5) / a_c, relative_motion_2(:, 4) / a_c)
+grid on
+axis equal
+xlabel('T-axis')
+ylabel('R-axis')
+
+subplot(2,2,2)
+plot(relative_motion_2(:, 6) / a_c, relative_motion_2(:, 4) / a_c)
+grid on
+axis equal
+xlabel('N-axis')
+ylabel('R-axis')
+
+subplot(2,2,3)
+plot(relative_motion_2(:, 5) / a_c, relative_motion_2(:, 6) / a_c)
+grid on
+axis equal
+xlabel('T-axis')
+ylabel('N-axis')
+
+subplot(2,2,4)
+plot3(relative_motion_2(:, 4) / a_c, relative_motion_2(:, 5) / a_c, relative_motion_2(:, 6) / a_c)
+grid on
+axis equal
+view(3)
+xlabel('R-axis')
+ylabel('T-axis')
+zlabel('N-axis')
+
 %% Part e: Relative Orbital Elements
 
 ROE = [(a_d - a_c) / a_c;
@@ -210,7 +244,7 @@ function M = STM_YA(f, e, t, n, M_1)
                             -3/2*k*tau,  (1+1/k)*cos(f),   -(1+1/k)*sin(f),     1/k,          0,          0;
                                      0,               0,                 0,       0, 1/k*sin(f), 1/k*cos(f);
            k_prime/2-3/2*k^2*(k-1)*tau,      k^2*cos(f),       -k^2*sin(f),       0,          0,          0;
-               -3/2*(k+k^2*k_prime*tau), -(k^2+1)*sin(f), -e-(k^2+1)*cos(f), k_prime,          0,          0;
+               -3/2*(k+k^2*k_prime*tau), -(k^2+1)*sin(f), -e-(k^2+1)*cos(f), -k_prime,          0,          0;
                                      0,               0,                 0,       0,   e+cos(f),    -sin(f)];
     M = M_1 * M_2;
 end
