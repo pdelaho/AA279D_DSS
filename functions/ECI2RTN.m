@@ -28,12 +28,10 @@ function state_RTN = ECI2RTN(state_frame, state_ECI, mu)
 
     [a, e, i, omega, RAAN, f] = ECI2OE_f(state_frame, mu);
 
-    theta_dot_vec = [0 0 sqrt(mu / (a^3 * (1 - e^2)^3)) * (1 + e * cos(f))^2]
-%     theta_dot_vec = [0 0 sqrt(mu / (a^3 * (1 - e^2)^3)) * (1 + e)^2];
+    theta_dot_vec = [0 0 sqrt(mu / (a^3 * (1 - e^2)^3)) * (1 + e * cos(f))^2];
 
     state_RTN = zeros(1,6);
     state_RTN(1:3) = rotation * state_ECI_row(1:3)';
-    rotation * state_ECI_row(4:6)' - cross(theta_dot_vec, state_RTN(1:3)')'
     state_RTN(4:6) = rotation * state_ECI_row(4:6)' - cross(theta_dot_vec, state_RTN(1:3)')';
     
 end

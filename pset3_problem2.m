@@ -291,6 +291,138 @@ ROE_from_YA - ROE
 
 %% Part h: Comparison with numerical integration of FODE
 
+IC = [pos_chief', vel_chief', pos_deputy', vel_deputy'];
+options = odeset('RelTol', 1e-12, 'AbsTol', 1e-15, 'MaxStep', 100);
+[t_FODE, y_FODE] = ode89(@(t, state) FODE_2sats(t, state, mu), tspan, IC, options);
+
+relative_motion_FODE = zeros(N, 6);
+errors_YA = zeros(N, 6);
+errors_ROE = zeros(N, 6);
+
+for i=1:N
+    rel_state_ECI = y_FODE(i, 7:12) - y_FODE(i, 1:6);
+    rel_state_RTN = ECI2RTN(y_FODE(i, 1:6), rel_state_ECI, mu);
+    relative_motion_FODE(i, :) = rel_state_RTN;
+%     abs(rel_state_RTN - relative_motion_2(i, :))
+%     abs(rel_state_RTN - relative_motion_ROE(i, :))
+    errors_YA(i, :) = abs(rel_state_RTN - relative_motion_2(i, :));
+    errors_ROE(i, :) = abs(rel_state_RTN - relative_motion_ROE(i, :));
+end
+
+figure
+subplot(2,2,1)
+plot(relative_motion_FODE(:, 2), relative_motion_FODE(:, 1))
+grid on
+axis equal
+xlabel('T-axis')
+ylabel('R-axis')
+
+subplot(2,2,2)
+plot(relative_motion_FODE(:, 3), relative_motion_FODE(:, 1))
+grid on
+axis equal
+xlabel('N-axis')
+ylabel('R-axis')
+
+subplot(2,2,3)
+plot(relative_motion_FODE(:, 2), relative_motion_FODE(:, 3))
+grid on
+axis equal
+xlabel('T-axis')
+ylabel('N-axis')
+
+subplot(2,2,4)
+plot3(relative_motion_FODE(:, 1), relative_motion_FODE(:, 2), relative_motion_FODE(:, 3))
+grid on
+axis equal
+view(3)
+xlabel('R-axis')
+ylabel('T-axis')
+zlabel('N-axis')
+
+figure
+subplot(2,2,1)
+plot(relative_motion_FODE(:, 5) / a_c, relative_motion_FODE(:, 4) / a_c)
+grid on
+axis equal
+xlabel('T-axis')
+ylabel('R-axis')
+
+subplot(2,2,2)
+plot(relative_motion_FODE(:, 6) / a_c, relative_motion_FODE(:, 4) / a_c)
+grid on
+axis equal
+xlabel('N-axis')
+ylabel('R-axis')
+
+subplot(2,2,3)
+plot(relative_motion_FODE(:, 5) / a_c, relative_motion_FODE(:, 6) / a_c)
+grid on
+axis equal
+xlabel('T-axis')
+ylabel('N-axis')
+
+subplot(2,2,4)
+plot3(relative_motion_FODE(:, 4) / a_c, relative_motion_FODE(:, 5) / a_c, relative_motion_FODE(:, 6) / a_c)
+grid on
+axis equal
+view(3)
+xlabel('R-axis')
+ylabel('T-axis')
+zlabel('N-axis')
+
+figure
+subplot(3,2,1)
+title('Error in position')
+hold on
+plot(tspan / T, errors_YA(:, 1))
+plot(tspan / T, errors_ROE(:, 1))
+hold off
+legend('YA','ROE')
+grid on
+ylabel('R-direction [km]')
+
+subplot(3,2,3)
+hold on
+plot(tspan / T, errors_YA(:, 2))
+plot(tspan / T, errors_ROE(:, 2))
+hold off
+grid on
+ylabel('T-direction [km]')
+
+subplot(3,2,5)
+hold on
+plot(tspan / T, errors_YA(:, 3))
+plot(tspan / T, errors_ROE(:, 3))
+hold off
+grid on
+ylabel('N-direction [km]')
+xlabel('Orbital Periods')
+
+subplot(3,2,2)
+title('Error in velocity')
+hold on
+plot(tspan / T, errors_YA(:, 4))
+plot(tspan / T, errors_ROE(:, 4))
+hold off
+grid on
+ylabel('R-direction [km/s]')
+
+subplot(3,2,4)
+hold on
+plot(tspan / T, errors_YA(:, 5))
+plot(tspan / T, errors_ROE(:, 5))
+hold off
+grid on
+ylabel('T-direction [km/s]')
+
+subplot(3,2,6)
+hold on
+plot(tspan / T, errors_YA(:, 6))
+plot(tspan / T, errors_ROE(:, 6))
+hold off
+grid on
+ylabel('N-direction [km/s]')
 
 
 %% Functions
