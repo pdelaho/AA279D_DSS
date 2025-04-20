@@ -20,7 +20,7 @@ T = 2 * pi / n;
 
 %% Part b: Initial position and velocity in inertial frame
 
-[position_ECI, velocity_ECI] = OEtoECI(a, e, inc, omega, RAAN, f, mu);
+[position_ECI, velocity_ECI] = OE2ECI(a, e, inc, omega, RAAN, f, mu);
 
 %% Part c: Orbit propagation with and without J2 effects
 
@@ -115,14 +115,14 @@ for i=1:N
     f = E2f(E, e);
 
     % Computing the position and velocity vectors in the inertial frame
-    [pos, vel] = OEtoECI(a, e, inc, omega, RAAN, f, mu);
+    [pos, vel] = OE2ECI(a, e, inc, omega, RAAN, f, mu);
 
     % Computing the errors in ECI frame
     error_pos_ECI = y_unpert(i, 1:3)' - pos;
     error_vel_ECI = y_unpert(i, 4:6)' - vel;
     
     % Transforming the errors from ECI to RTN
-    state_RTN = ECItoRTN([pos', vel'], [error_pos_ECI', error_vel_ECI'], mu);
+    state_RTN = ECI2RTN([pos', vel'], [error_pos_ECI', error_vel_ECI'], mu);
     errors_RTN(i, :) = abs(state_RTN);
 end
 
@@ -330,7 +330,7 @@ for i=1:N
     M_osculating_GVE(i) = M_pert;
     E_pert = M2E(M_pert, ecc, 1e-12);
     f_pert = E2f(E_pert, ecc);
-    [pos, vel] = OEtoECI(y_osculating_OE(i, 1), ecc, y_osculating_OE(i, 4), omega_pert, y_osculating_OE(i, 5), f_pert, mu);
+    [pos, vel] = OE2ECI(y_osculating_OE(i, 1), ecc, y_osculating_OE(i, 4), omega_pert, y_osculating_OE(i, 5), f_pert, mu);
     ang_mom_osculating_GVE(i, :) = cross(pos, vel);
     spec_energy_osculating_GVE(i) = - mu / (2 * y_osculating_OE(i, 1));
     evec_osculating_GVE(i, :) = cross(vel, cross(pos, vel)) / mu - pos / norm(pos);
@@ -482,7 +482,7 @@ for i=1:N
     M_mean_GVE(i) = M_pert;
     E_pert = M2E(M_pert, ecc, 1e-12);
     f_pert = E2f(E_pert, ecc);
-    [pos, vel] = OEtoECI(y_mean_OE(i, 1), ecc, y_mean_OE(i, 4), omega_pert, y_mean_OE(i, 5), f_pert, mu);
+    [pos, vel] = OE2ECI(y_mean_OE(i, 1), ecc, y_mean_OE(i, 4), omega_pert, y_mean_OE(i, 5), f_pert, mu);
     ang_mom_mean_GVE(i, :) = cross(pos, vel);
     spec_energy_mean_GVE(i) = - mu / (2 * y_mean_OE(i, 1));
     evec_mean_GVE(i, :) = cross(vel, cross(pos, vel)) / mu - pos / norm(pos);

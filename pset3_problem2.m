@@ -35,18 +35,31 @@ nu_d = nu_c + delta_nu / a_c;
 E_d = atan2(sin(nu_d)*sqrt(1-e_d^2)/(1+e_d*cos(nu_d)), (e_d+cos(nu_d))/(1+e_d*cos(nu_d)));
 M_d = E_d - e_d * sin(E_d);
 
-[pos_chief, vel_chief] = OEtoECI(a_c, e_c, inc_c, omega_c, RAAN_c, nu_c, mu);
-[pos_deputy, vel_deputy] = OEtoECI(a_d, e_d, inc_d, omega_d, RAAN_d, nu_d, mu);
+[pos_chief, vel_chief] = OE2ECI(a_c, e_c, inc_c, omega_c, RAAN_c, nu_c, mu);
+[pos_deputy, vel_deputy] = OE2ECI(a_d, e_d, inc_d, omega_d, RAAN_d, nu_d, mu);
 
 % Relative position and velocity in RTN
 rho_ECI = pos_deputy - pos_chief;
 rho_dot_ECI = vel_deputy - vel_chief;
 
-rot_ECItoRTN = ECItoRTN([pos_chief; vel_chief]);
-omega_vec = [0 0 sqrt(mu / (a_c^3 * (1 - e_c^2)^3)) * (1 + e_c * cos(nu_c))^2];
+% % rot_ECItoRTN = ECItoRTN([pos_chief; vel_chief]);
+% omega_vec = [0 0 sqrt(mu / (a_c^3 * (1 - e_c^2)^3)) * (1 + e_c * cos(nu_c))^2]
+% 
+% % RTN unit vectors
+% R = pos_chief / norm(pos_chief);
+% h = cross(pos_chief, vel_chief);
+% N = h / norm(h);
+% T = cross(N, R);
+% 
+% % Rotation matrix from ECI to RTN
+% rotation = [R'; T'; N'];
+% 
+% rho_RTN = rotation * rho_ECI
+% rho_dot_RTN = rotation * rho_dot_ECI - cross(omega_vec', rho_RTN)
 
-rho_RTN = rot_ECItoRTN * rho_ECI;
-rho_dot_RTN = rot_ECItoRTN * rho_dot_ECI - cross(omega_vec', rho_RTN);
+state_RTN = ECI2RTN([pos_chief; vel_chief], [rho_ECI; rho_dot_ECI], mu);
+rho_RTN = state_RTN(1:3)'
+rho_dot_RTN = state_RTN(4:6)'
 
 norm(rho_RTN) / (0.001 * a_c)
 
@@ -88,8 +101,8 @@ k = 1 + e_c * cos(nu_c);
 k_prime = - e_c * sin(nu_c);
 eta = sqrt(1 - e_c^2);
 M_1 = [a_c * eta^2 * eye(3), zeros(3);
-       zeros(3), a_c * n_c / eta * eye(3)]
-int_const = (STM_YA(nu_c, e_c, 0, n_c, M_1))^(-1) * [rho_RTN; rho_dot_RTN]
+       zeros(3), a_c * n_c / eta * eye(3)];
+int_const = (STM_YA(nu_c, e_c, 0, n_c, M_1))^(-1) * [rho_RTN; rho_dot_RTN];
 
 M_2_inv = [2*k^2*(k+1)/eta^2, 2*k^2*k_prime/eta^2, 0, -2*k_prime/eta^2, 2*k/eta^2, 0;
            (1-(k+1)^2/eta^2)*sin(nu_c), -(k+1)*k_prime/eta^2*sin(nu_c), 0, 1/eta^2*(cos(nu_c)-2*e_c/k), -1/eta^2*(1+1/k)*sin(nu_c), 0;
@@ -97,14 +110,14 @@ M_2_inv = [2*k^2*(k+1)/eta^2, 2*k^2*k_prime/eta^2, 0, -2*k_prime/eta^2, 2*k/eta^
            (k+1)^2*k_prime/eta^2, k/eta^2*(2+k-k^2)-1, 0, 1/eta^2*(k-1-2/k), k_prime/eta^2*(1+1/k), 0;
            0, 0, sin(nu_c), 0, 0, cos(nu_c)/k;
            0, 0, e_c+cos(nu_c), 0, 0, -sin(nu_c)/k];
-int_const_2 = M_2_inv * [1/ (a_c * eta^2) * eye(3), zeros(3); zeros(3), eta/(a_c*n_c)*eye(3)] * [rho_RTN; rho_dot_RTN]
+int_const_2 = M_2_inv * [1/ (a_c * eta^2) * eye(3), zeros(3); zeros(3), eta/(a_c*n_c)*eye(3)] * [rho_RTN; rho_dot_RTN];
 
 % int_const(1) = 0;
 
-k*rho_dot_RTN(2) + e_c*sin(nu_c)*(rho_dot_RTN(1)-rho_RTN(2)) + (2+e_c*cos(nu_c))*rho_RTN(1)
-% rho_RTN(1) = - (k*rho_dot_RTN(2) + e_c*sin(nu_c)*(rho_dot_RTN(1)-rho_RTN(2))) / (2+e_c*cos(nu_c));
-% rho_dot_RTN(2) = - (e_c*sin(nu_c)*(rho_dot_RTN(1)-rho_RTN(2)) + (2+e_c*cos(nu_c))*rho_RTN(1)) / k;
-k*rho_dot_RTN(2) + e_c*sin(nu_c)*(rho_dot_RTN(1)-rho_RTN(2)) + (2+e_c*cos(nu_c))*rho_RTN(1)
+% k*rho_dot_RTN(2) + e_c*sin(nu_c)*(rho_dot_RTN(1)-rho_RTN(2)) + (2+e_c*cos(nu_c))*rho_RTN(1)
+% % rho_RTN(1) = - (k*rho_dot_RTN(2) + e_c*sin(nu_c)*(rho_dot_RTN(1)-rho_RTN(2))) / (2+e_c*cos(nu_c));
+% % rho_dot_RTN(2) = - (e_c*sin(nu_c)*(rho_dot_RTN(1)-rho_RTN(2)) + (2+e_c*cos(nu_c))*rho_RTN(1)) / k;
+% k*rho_dot_RTN(2) + e_c*sin(nu_c)*(rho_dot_RTN(1)-rho_RTN(2)) + (2+e_c*cos(nu_c))*rho_RTN(1)
 
 %% Part c: propagation of YA solution
 

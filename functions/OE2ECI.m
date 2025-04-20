@@ -14,7 +14,7 @@
 %       position_ECI - (3x1) position vector in ECI [km]
 %       velocity_ECI - (3x1) velocity vector in ECI [km/s]
 
-function [position_ECI, velocity_ECI] = OEtoECI(a, e, inc, omega, RAAN, nu, mu)
+function [position_ECI, velocity_ECI] = OE2ECI(a, e, inc, omega, RAAN, nu, mu)
 
     % Useful quantities
     cosE = (e + cos(nu)) / (1 + e * cos(nu));

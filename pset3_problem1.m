@@ -34,14 +34,14 @@ omega_d = omega_c + delta_omega / a_c
 RAAN_d = RAAN_c + delta_RAAN / a_c
 nu_d = nu_c + delta_nu / a_c
 
-[pos_chief, vel_chief] = OEtoECI(a_c, e_c, inc_c, omega_c, RAAN_c, nu_c, mu);
-[pos_deputy, vel_deputy] = OEtoECI(a_d, e_d, inc_d, omega_d, RAAN_d, nu_d, mu);
+[pos_chief, vel_chief] = OE2ECI(a_c, e_c, inc_c, omega_c, RAAN_c, nu_c, mu);
+[pos_deputy, vel_deputy] = OE2ECI(a_d, e_d, inc_d, omega_d, RAAN_d, nu_d, mu);
 
 % Relative position and velocity in RTN
 rho_ECI = pos_deputy - pos_chief;
 rho_dot_ECI = vel_deputy - vel_chief;
 
-rot_ECItoRTN = ECItoRTN([pos_chief; vel_chief]);
+rot_ECItoRTN = ECI2RTN([pos_chief; vel_chief]);
 omega_vec = [0 0 sqrt(mu / (a_c^3 * (1 - e_c^2)^3)) * (1 + e_c * cos(nu_c))^2];
 
 rho_RTN = rot_ECItoRTN * rho_ECI;
