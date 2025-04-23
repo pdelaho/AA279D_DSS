@@ -6,9 +6,20 @@ mu = 398600.435436; % km^3/s^2
 
 %% Part a
 
+% % For the chief
+% a_c = 36943; % km
+% e_c = 0.3;
+% inc_c = deg2rad(59);
+% omega_c = deg2rad(188);
+% RAAN_c = deg2rad(84);
+% nu_c = deg2rad(0);
+% M_c = 0;
+% T = 2 * pi * sqrt(a_c^3 / mu);
+% n_c = sqrt(mu / a_c^3);
+
 % For the chief
 a_c = 36943; % km
-e_c = 0.3;
+e_c = 0.8111;
 inc_c = deg2rad(59);
 omega_c = deg2rad(188);
 RAAN_c = deg2rad(84);
@@ -16,6 +27,22 @@ nu_c = deg2rad(0);
 M_c = 0;
 T = 2 * pi * sqrt(a_c^3 / mu);
 n_c = sqrt(mu / a_c^3);
+
+% % For the deputy
+% delta_a = 0;
+% delta_e = - e_c * 0.00001 * a_c;
+% delta_i = deg2rad(0.0005) * a_c;
+% delta_omega = 0;
+% delta_RAAN = - deg2rad(0.001) * a_c;
+% delta_nu = deg2rad(-0.00016) * a_c;
+
+% % For the deputy
+% delta_a = 0.1;
+% delta_e = - e_c * 0.00001 * a_c;
+% delta_i = deg2rad(0.0005) * a_c;
+% delta_omega = 0;
+% delta_RAAN = - deg2rad(0.001) * a_c;
+% delta_nu = deg2rad(-0.00016) * a_c;
 
 % For the deputy
 delta_a = 0;
@@ -47,7 +74,8 @@ state_RTN = ECI2RTN([pos_chief; vel_chief], [rho_ECI; rho_dot_ECI], mu);
 rho_RTN = state_RTN(1:3)';
 rho_dot_RTN = state_RTN(4:6)';
 
-norm(rho_RTN) / (0.001 * a_c)
+norm(rho_RTN)
+norm(rho_RTN) / (a_c)
 
 %% Part b:
 
@@ -56,7 +84,7 @@ k_prime = - e_c * sin(nu_c);
 eta = sqrt(1 - e_c^2);
 scaling_matrix = [a_c * eta^2 * eye(3), zeros(3);
        zeros(3), a_c * n_c / eta * eye(3)];
-int_const = (scaling_matrix * STM_YA(nu_c, e_c, 0, n_c))^(-1) * [rho_RTN; rho_dot_RTN];
+K = (scaling_matrix * STM_YA(nu_c, e_c, 0, n_c))^(-1) * [rho_RTN; rho_dot_RTN];
 
 M_2_inv = [2*k^2*(k+1)/eta^2, 2*k^2*k_prime/eta^2, 0, -2*k_prime/eta^2, 2*k/eta^2, 0;
            (1-(k+1)^2/eta^2)*sin(nu_c), -(k+1)*k_prime/eta^2*sin(nu_c), 0, 1/eta^2*(cos(nu_c)-2*e_c/k), -1/eta^2*(1+1/k)*sin(nu_c), 0;
@@ -64,7 +92,7 @@ M_2_inv = [2*k^2*(k+1)/eta^2, 2*k^2*k_prime/eta^2, 0, -2*k_prime/eta^2, 2*k/eta^
            (k+1)^2*k_prime/eta^2, k/eta^2*(2+k-k^2)-1, 0, 1/eta^2*(k-1-2/k), k_prime/eta^2*(1+1/k), 0;
            0, 0, sin(nu_c), 0, 0, cos(nu_c)/k;
            0, 0, e_c+cos(nu_c), 0, 0, -sin(nu_c)/k];
-K = M_2_inv * [1/ (a_c * eta^2) * eye(3), zeros(3); zeros(3), eta/(a_c*n_c)*eye(3)] * [rho_RTN; rho_dot_RTN];
+int_const = M_2_inv * [1/ (a_c * eta^2) * eye(3), zeros(3); zeros(3), eta/(a_c*n_c)*eye(3)] * [rho_RTN; rho_dot_RTN];
 
 % int_const(1) = 0;
 
@@ -127,62 +155,62 @@ subplot(2,2,1)
 plot(relative_motion_2(:, 2), relative_motion_2(:, 1))
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('R-axis')
+xlabel('T-axis [km]')
+ylabel('R-axis [km]')
 
 subplot(2,2,2)
 plot(relative_motion_2(:, 3), relative_motion_2(:, 1))
 grid on
 axis equal
-xlabel('N-axis')
-ylabel('R-axis')
+xlabel('N-axis [km]')
+ylabel('R-axis [km]')
 
 subplot(2,2,3)
 plot(relative_motion_2(:, 2), relative_motion_2(:, 3))
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('N-axis')
+xlabel('T-axis [km]')
+ylabel('N-axis [km]')
 
 subplot(2,2,4)
 plot3(relative_motion_2(:, 1), relative_motion_2(:, 2), relative_motion_2(:, 3))
 grid on
 axis equal
 view(3)
-xlabel('R-axis')
-ylabel('T-axis')
-zlabel('N-axis')
+xlabel('R-axis [km]')
+ylabel('T-axis [km]')
+zlabel('N-axis [km]')
 
 figure
 subplot(2,2,1)
-plot(relative_motion_2(:, 5) / a_c, relative_motion_2(:, 4) / a_c)
+plot(relative_motion_2(:, 5), relative_motion_2(:, 4))
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('R-axis')
+xlabel('T-axis [km/s]')
+ylabel('R-axis [km/s]')
 
 subplot(2,2,2)
-plot(relative_motion_2(:, 6) / a_c, relative_motion_2(:, 4) / a_c)
+plot(relative_motion_2(:, 6), relative_motion_2(:, 4))
 grid on
 axis equal
-xlabel('N-axis')
-ylabel('R-axis')
+xlabel('N-axis [km/s]')
+ylabel('R-axis [km/s]')
 
 subplot(2,2,3)
-plot(relative_motion_2(:, 5) / a_c, relative_motion_2(:, 6) / a_c)
+plot(relative_motion_2(:, 5), relative_motion_2(:, 6))
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('N-axis')
+xlabel('T-axis [km/s]')
+ylabel('N-axis [km/s]')
 
 subplot(2,2,4)
-plot3(relative_motion_2(:, 4) / a_c, relative_motion_2(:, 5) / a_c, relative_motion_2(:, 6) / a_c)
+plot3(relative_motion_2(:, 4), relative_motion_2(:, 5), relative_motion_2(:, 6))
 grid on
 axis equal
 view(3)
-xlabel('R-axis')
-ylabel('T-axis')
-zlabel('N-axis')
+xlabel('R-axis [km/s]')
+ylabel('T-axis [km/s]')
+zlabel('N-axis [km/s]')
 
 %% Part e: Relative Orbital Elements
 
@@ -199,7 +227,7 @@ relative_motion_ROE = zeros(N,6);
 
 for i=1:N
     M = wrapTo2Pi(n_c * tspan(i));
-    E = M2E(M, e_c, 1e-15);
+    E = M2E(M, e_c, 1e-12);
     nu = atan2(sin(E)*sqrt(1-e_c^2)/(1-e_c*cos(E)), (cos(E)-e_c)/(1-e_c*cos(E)));
     STM = STM_ROE(nu, e_c, omega_c, inc_c, tspan(i), n_c);
     relative_motion_ROE(i, :) = scaling_matrix * STM * ROE;
@@ -207,65 +235,91 @@ end
 
 figure
 subplot(2,2,1)
-plot(relative_motion_ROE(:, 2), relative_motion_ROE(:, 1))
+hold on
+plot(relative_motion_2(:, 2), relative_motion_2(:, 1), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 2), relative_motion_ROE(:, 1), 'LineWidth', 1.5)
+hold off
+legend('YA','ROE')
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('R-axis')
+xlabel('T-axis [km]')
+ylabel('R-axis [km]')
 
 subplot(2,2,2)
-plot(relative_motion_ROE(:, 3), relative_motion_ROE(:, 1))
+hold on
+plot(relative_motion_2(:, 3), relative_motion_2(:, 1), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 3), relative_motion_ROE(:, 1), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
-xlabel('N-axis')
-ylabel('R-axis')
+xlabel('N-axis [km]')
+ylabel('R-axis [km]')
 
 subplot(2,2,3)
-plot(relative_motion_ROE(:, 2), relative_motion_ROE(:, 3))
+hold on
+plot(relative_motion_2(:, 2), relative_motion_2(:, 3), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 2), relative_motion_ROE(:, 3), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('N-axis')
+xlabel('T-axis [km]')
+ylabel('N-axis [km]')
 
 subplot(2,2,4)
-plot3(relative_motion_ROE(:, 1), relative_motion_ROE(:, 2), relative_motion_ROE(:, 3))
+hold on
+plot3(relative_motion_2(:, 1), relative_motion_2(:, 2), relative_motion_2(:, 3), 'LineWidth', 1.5)
+plot3(relative_motion_ROE(:, 1), relative_motion_ROE(:, 2), relative_motion_ROE(:, 3), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
 view(3)
-xlabel('R-axis')
-ylabel('T-axis')
-zlabel('N-axis')
+xlabel('R-axis [km]')
+ylabel('T-axis [km]')
+zlabel('N-axis [km]')
 
 figure
 subplot(2,2,1)
-plot(relative_motion_ROE(:, 5) / a_c, relative_motion_ROE(:, 4) / a_c)
+hold on
+plot(relative_motion_2(:, 5), relative_motion_2(:, 4), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 5), relative_motion_ROE(:, 4), 'LineWidth', 1.5)
+hold off
+legend('YA','ROE')
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('R-axis')
+xlabel('T-axis [km/s]')
+ylabel('R-axis [km/s]')
 
 subplot(2,2,2)
-plot(relative_motion_ROE(:, 6) / a_c, relative_motion_ROE(:, 4) / a_c)
+hold on
+plot(relative_motion_2(:, 6), relative_motion_2(:, 4), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 6), relative_motion_ROE(:, 4), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
-xlabel('N-axis')
-ylabel('R-axis')
+xlabel('N-axis [km/s]')
+ylabel('R-axis [km/s]')
 
 subplot(2,2,3)
-plot(relative_motion_ROE(:, 5) / a_c, relative_motion_ROE(:, 6) / a_c)
+hold on
+plot(relative_motion_2(:, 5), relative_motion_2(:, 6), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 5), relative_motion_ROE(:, 6), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('N-axis')
+xlabel('T-axis [km/s]')
+ylabel('N-axis [km/s]')
 
 subplot(2,2,4)
-plot3(relative_motion_ROE(:, 4) / a_c, relative_motion_ROE(:, 5) / a_c, relative_motion_ROE(:, 6) / a_c)
+hold on
+plot3(relative_motion_2(:, 4), relative_motion_2(:, 5), relative_motion_2(:, 6), 'LineWidth', 1.5)
+plot3(relative_motion_ROE(:, 4), relative_motion_ROE(:, 5), relative_motion_ROE(:, 6), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
 view(3)
-xlabel('R-axis')
-ylabel('T-axis')
-zlabel('N-axis')
+xlabel('R-axis [km/s]')
+ylabel('T-axis [km/s]')
+zlabel('N-axis [km/s]')
 
 %% Part g: Relationship between YA integration constants and ROEs
 
@@ -286,7 +340,7 @@ mat = [1, 0, 0, 0, 0, 0;
        0, e_y^2-1, e_x*e_y, e_x, 0, e_x*cot(inc_c);
        0, 0, 0, 0, 1, 0;
        0, 0, 0, 0, 0, -1];
-ROE_from_YA = mat * K_u;
+ROE_from_YA = mat * K_u
 ROE_from_YA - ROE
 
 %% Part h: Comparison with numerical integration of FODE
@@ -311,119 +365,169 @@ end
 
 figure
 subplot(2,2,1)
-plot(relative_motion_FODE(:, 2), relative_motion_FODE(:, 1))
+hold on
+plot(relative_motion_2(:, 2), relative_motion_2(:, 1), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 2), relative_motion_ROE(:, 1), 'LineWidth', 1.5)
+plot(relative_motion_FODE(:, 2), relative_motion_FODE(:, 1), 'LineWidth', 1.5)
+hold off
+legend('YA', 'ROE', 'Ground truth')
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('R-axis')
+xlabel('T-axis [km]')
+ylabel('R-axis [km]')
 
 subplot(2,2,2)
-plot(relative_motion_FODE(:, 3), relative_motion_FODE(:, 1))
+hold on
+plot(relative_motion_2(:, 3), relative_motion_2(:, 1), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 3), relative_motion_ROE(:, 1), 'LineWidth', 1.5)
+plot(relative_motion_FODE(:, 3), relative_motion_FODE(:, 1), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
-xlabel('N-axis')
-ylabel('R-axis')
+xlabel('N-axis [km]')
+ylabel('R-axis [km]')
 
 subplot(2,2,3)
-plot(relative_motion_FODE(:, 2), relative_motion_FODE(:, 3))
+hold on
+plot(relative_motion_2(:, 2), relative_motion_2(:, 3), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 2), relative_motion_ROE(:, 3), 'LineWidth', 1.5)
+plot(relative_motion_FODE(:, 2), relative_motion_FODE(:, 3), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('N-axis')
+xlabel('T-axis [km]')
+ylabel('N-axis [km]')
 
 subplot(2,2,4)
-plot3(relative_motion_FODE(:, 1), relative_motion_FODE(:, 2), relative_motion_FODE(:, 3))
+hold on
+plot3(relative_motion_2(:, 1), relative_motion_2(:, 2), relative_motion_2(:, 3), 'LineWidth', 1.5)
+plot3(relative_motion_ROE(:, 1), relative_motion_ROE(:, 2), relative_motion_ROE(:, 3), 'LineWidth', 1.5)
+plot3(relative_motion_FODE(:, 1), relative_motion_FODE(:, 2), relative_motion_FODE(:, 3), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
 view(3)
-xlabel('R-axis')
-ylabel('T-axis')
-zlabel('N-axis')
+xlabel('R-axis [km]')
+ylabel('T-axis [km]')
+zlabel('N-axis [km]')
 
 figure
 subplot(2,2,1)
-plot(relative_motion_FODE(:, 5) / a_c, relative_motion_FODE(:, 4) / a_c)
+hold on
+plot(relative_motion_2(:, 5), relative_motion_2(:, 4), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 5), relative_motion_ROE(:, 4), 'LineWidth', 1.5)
+plot(relative_motion_FODE(:, 5), relative_motion_FODE(:, 4), 'LineWidth', 1.5)
+hold off
+legend('YA', 'ROE', 'Ground truth')
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('R-axis')
+xlabel('T-axis [km/s]')
+ylabel('R-axis [km/s]')
 
 subplot(2,2,2)
-plot(relative_motion_FODE(:, 6) / a_c, relative_motion_FODE(:, 4) / a_c)
+hold on
+plot(relative_motion_2(:, 6), relative_motion_2(:, 4), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 6), relative_motion_ROE(:, 4), 'LineWidth', 1.5)
+plot(relative_motion_FODE(:, 6), relative_motion_FODE(:, 4), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
-xlabel('N-axis')
-ylabel('R-axis')
+xlabel('N-axis [km/s]')
+ylabel('R-axis [km/s]')
 
 subplot(2,2,3)
-plot(relative_motion_FODE(:, 5) / a_c, relative_motion_FODE(:, 6) / a_c)
+hold on
+plot(relative_motion_2(:, 5), relative_motion_2(:, 6), 'LineWidth', 1.5)
+plot(relative_motion_ROE(:, 5), relative_motion_ROE(:, 6), 'LineWidth', 1.5)
+plot(relative_motion_FODE(:, 5), relative_motion_FODE(:, 6), 'LineWidth', 1.5)
+hold off
 grid on
 axis equal
-xlabel('T-axis')
-ylabel('N-axis')
+xlabel('T-axis [km/s]')
+ylabel('N-axis [km/s]')
 
 subplot(2,2,4)
-plot3(relative_motion_FODE(:, 4) / a_c, relative_motion_FODE(:, 5) / a_c, relative_motion_FODE(:, 6) / a_c)
+hold on
+plot3(relative_motion_2(:, 4), relative_motion_2(:, 5), relative_motion_2(:, 6), 'LineWidth', 1.5)
+plot3(relative_motion_ROE(:, 4), relative_motion_ROE(:, 5), relative_motion_ROE(:, 6), 'LineWidth', 1.5)
+plot3(relative_motion_FODE(:, 4), relative_motion_FODE(:, 5), relative_motion_FODE(:, 6), 'LineWidth', 1.5)
 grid on
 axis equal
 view(3)
-xlabel('R-axis')
-ylabel('T-axis')
-zlabel('N-axis')
+xlabel('R-axis [km/s]')
+ylabel('T-axis [km/s]')
+zlabel('N-axis [km/s]')
 
 figure
 subplot(3,2,1)
 title('Error in position')
-hold on
 plot(tspan / T, errors_YA(:, 1))
-plot(tspan / T, errors_ROE(:, 1))
-hold off
-legend('YA','ROE')
 grid on
 ylabel('R-direction [km]')
 
 subplot(3,2,3)
-hold on
 plot(tspan / T, errors_YA(:, 2))
-plot(tspan / T, errors_ROE(:, 2))
-hold off
 grid on
 ylabel('T-direction [km]')
 
 subplot(3,2,5)
-hold on
 plot(tspan / T, errors_YA(:, 3))
-plot(tspan / T, errors_ROE(:, 3))
-hold off
 grid on
 ylabel('N-direction [km]')
 xlabel('Orbital Periods')
 
 subplot(3,2,2)
 title('Error in velocity')
-hold on
 plot(tspan / T, errors_YA(:, 4))
-plot(tspan / T, errors_ROE(:, 4))
-hold off
 grid on
 ylabel('R-direction [km/s]')
 
 subplot(3,2,4)
-hold on
 plot(tspan / T, errors_YA(:, 5))
-plot(tspan / T, errors_ROE(:, 5))
-hold off
 grid on
 ylabel('T-direction [km/s]')
 
 subplot(3,2,6)
-hold on
 plot(tspan / T, errors_YA(:, 6))
-plot(tspan / T, errors_ROE(:, 6))
-hold off
 grid on
 ylabel('N-direction [km/s]')
+xlabel('Orbital Periods')
 
+figure
+subplot(3,2,1)
+title('Error in position')
+plot(tspan / T, errors_ROE(:, 1))
+grid on
+ylabel('R-direction [km]')
+
+subplot(3,2,3)
+plot(tspan / T, errors_ROE(:, 2))
+grid on
+ylabel('T-direction [km]')
+
+subplot(3,2,5)
+title('Error in velocity')
+plot(tspan / T, errors_ROE(:, 3))
+grid on
+ylabel('N-direction [km]')
+xlabel('Orbital Periods')
+
+subplot(3,2,2)
+title('Error in velocity')
+plot(tspan / T, errors_ROE(:, 4))
+grid on
+ylabel('R-direction [km/s]')
+
+subplot(3,2,4)
+plot(tspan / T, errors_ROE(:, 5))
+grid on
+ylabel('T-direction [km/s]')
+
+subplot(3,2,6)
+plot(tspan / T, errors_ROE(:, 6))
+grid on
+ylabel('N-direction [km/s]')
+xlabel('Orbital Periods')
 
 %% Functions
 

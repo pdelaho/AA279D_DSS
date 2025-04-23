@@ -10,7 +10,8 @@ R_E = 6378; % km
 % For the chief
 % Since there are no perturbations, mean elements = osculating elements
 a_c = 36943; % km, semi-major axis
-e_c = 0.8111; % eccentricity
+% e_c = 0.8111; % eccentricity
+e_c = 0.0001;
 inc_c = deg2rad(59); % inclination
 omega_c = deg2rad(188); % argument of periapsis
 RAAN_c = deg2rad(84); % right ascension of the ascending node
@@ -18,13 +19,21 @@ nu_c = deg2rad(0); % true anomaly
 T = 2 * pi * sqrt(a_c^3 / mu);
 n_c = sqrt(mu / a_c^3);
 
+% % For the deputy
+% delta_a = 0;
+% delta_e = - e_c * 0.01 * a_c;
+% delta_i = deg2rad(0.5) * a_c;
+% delta_omega = 0;
+% delta_RAAN = - deg2rad(1) * a_c;
+% delta_nu = deg2rad(-0.016) * a_c;
+
 % For the deputy
 delta_a = 0;
-delta_e = - e_c * 0.01 * a_c;
-delta_i = deg2rad(0.5) * a_c;
+delta_e = - e_c * 0.1 * a_c;
+delta_i = deg2rad(0.0005) * a_c;
 delta_omega = 0;
-delta_RAAN = - deg2rad(1) * a_c;
-delta_nu = deg2rad(-0.016) * a_c;
+delta_RAAN = - deg2rad(0.0001) * a_c;
+delta_nu = deg2rad(-0.0016) * a_c;
 
 a_d = a_c + delta_a;
 e_d = e_c + delta_e / a_c;
