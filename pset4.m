@@ -259,11 +259,11 @@ roe_mean_pert = zeros(N, 6);
 u = zeros(N,1);
 
 for i=1:N
-%     [a_c, e_c, i_c, omega_c, RAAN_c, M_c] = ECI2OE_M(y_pert_1(i,1:6), mu);
-    [a_c, e_c, i_c, omega_c, RAAN_c, M_c] = inert2OE(y_pert_1(i,1:6), mu);
+    [a_c, e_c, i_c, omega_c, RAAN_c, M_c] = ECI2OE_M(y_pert_1(i,1:6), mu);
+%     [a_c, e_c, i_c, omega_c, RAAN_c, M_c] = inert2OE(y_pert_1(i,1:6), mu);
     oe_c = [a_c, e_c, i_c, omega_c, RAAN_c, M_c];
-%     [a_d, e_d, i_d, omega_d, RAAN_d, M_d] = ECI2OE_M(y_pert_1(i,7:12), mu);
-    [a_d, e_d, i_d, omega_d, RAAN_d, M_d] = inert2OE(y_pert_1(i,7:12), mu);
+    [a_d, e_d, i_d, omega_d, RAAN_d, M_d] = ECI2OE_M(y_pert_1(i,7:12), mu);
+%     [a_d, e_d, i_d, omega_d, RAAN_d, M_d] = inert2OE(y_pert_1(i,7:12), mu);
     oe_d = [a_d, e_d, i_d, omega_d, RAAN_d, M_d];
     u(i) = M_c+omega_c;
     qnsoe_c = OE2QNSOE(oe_c);
@@ -297,7 +297,7 @@ ylabel('Semi-major axis [km]')
 
 subplot(3,2,3)
 hold on
-plot(t_pert_1 / T, oe_c_osc_pert(:, 2), 'LineWidth',3)
+plot(t_pert_1 / T, oe_c_osc_pert(:, 2))
 plot(t_pert_1 / T, oe_c_mean_pert(:, 2))
 hold off
 grid on
@@ -572,6 +572,7 @@ ylabel('\deltaa [m]')
 init_mean_oe_deputy_2 = [initial_mean_oe_chief(1), initial_mean_oe_deputy(2), initial_mean_oe_chief(3), initial_mean_oe_deputy(5), initial_mean_oe_deputy(4), initial_mean_oe_deputy(6)];
 init_osc_oe_deputy_2 = mean2osc(init_mean_oe_deputy_2);
 
+% Computing the size of the maneuvers
 (init_osc_oe_deputy_2(1) - a_deputy*1e3) * n_deputy / 2
 (init_osc_oe_deputy_2(3) - inc_deputy) * n_deputy * a_deputy * 1e3
 
@@ -1027,12 +1028,8 @@ function STM = STM_QNSROE(t, a, e, i, omega, J2, R_E, mu)
     G = 1 / eta^2;
     P = 3 * cos(i)^2 - 1;
     Q = 5 * cos(i)^2 - 1;
-    R = cos(i);
     S = sin(2*i);
     T = sin(i)^2;
-    U = sin(i);
-    V = tan(i/2);
-    W = cos(i/2)^2;
 
     e_xi = e * cos(omega);
     e_yi = e * sin(omega);
