@@ -866,6 +866,34 @@ axis equal
 xlabel('\delta\lambda [m]')
 ylabel('\deltaa [m]')
 
+figure
+subplot(3,2,1)
+plot(t_unpert_2 / T, abs(roe_mean_pert(:, 1) - roe_bef_man(:, 1)) * a_chief * 1e3)
+ylabel('\deltaa [m]')
+
+subplot(3,2,3)
+plot(t_unpert_2 / T, abs(roe_mean_pert(:, 2) - roe_bef_man(:, 2)) * a_chief * 1e3)
+ylabel('\delta\lambda [m]')
+
+subplot(3,2,5)
+plot(t_unpert_2 / T, abs(roe_mean_pert(:, 3) - roe_bef_man(:, 3)) * a_chief * 1e3)
+ylabel('\deltae_x [m]')
+xlabel('Orbital Periods')
+
+subplot(3,2,2)
+plot(t_unpert_2 / T, abs(roe_mean_pert(:, 4) - roe_bef_man(:, 4)) * a_chief * 1e3)
+ylabel('\deltae_y [m]')
+
+subplot(3,2,4)
+plot(t_unpert_2 / T, abs(roe_mean_pert(:, 5) - roe_bef_man(:, 5)) * a_chief * 1e3)
+ylabel('\deltai_x [m]')
+
+subplot(3,2,6)
+plot(t_unpert_2 / T, abs(roe_mean_pert(:, 6) - roe_bef_man(:, 6)) * a_chief * 1e3)
+ylabel('\deltai_y [m]')
+xlabel('Orbital Periods')
+
+
 % Computing the initial mean ROE after applying the maneuver
 init_mean_oe_deputy = osc2mean(init_oe_deputy_2);
 initial_mean_oe_deputy = [init_mean_oe_deputy(1:3)', init_mean_oe_deputy(5), init_mean_oe_deputy(4), init_mean_oe_deputy(6)];
@@ -915,6 +943,33 @@ grid on
 axis equal
 xlabel('\delta\lambda [m]')
 ylabel('\deltaa [m]')
+
+figure
+subplot(3,2,1)
+plot(t_unpert_2 / T, abs(roe_mean_pert_2(:, 1) - roe_aft_man(:, 1)) * a_chief * 1e3)
+ylabel('\deltaa [m]')
+
+subplot(3,2,3)
+plot(t_unpert_2 / T, abs(roe_mean_pert_2(:, 2) - roe_aft_man(:, 2)) * a_chief * 1e3)
+ylabel('\delta\lambda [m]')
+
+subplot(3,2,5)
+plot(t_unpert_2 / T, abs(roe_mean_pert_2(:, 3) - roe_aft_man(:, 3)) * a_chief * 1e3)
+ylabel('\deltae_x [m]')
+xlabel('Orbital Periods')
+
+subplot(3,2,2)
+plot(t_unpert_2 / T, abs(roe_mean_pert_2(:, 4) - roe_aft_man(:, 4)) * a_chief * 1e3)
+ylabel('\deltae_y [m]')
+
+subplot(3,2,4)
+plot(t_unpert_2 / T, abs(roe_mean_pert_2(:, 5) - roe_aft_man(:, 5)) * a_chief * 1e3)
+ylabel('\deltai_x [m]')
+
+subplot(3,2,6)
+plot(t_unpert_2 / T, abs(roe_mean_pert_2(:, 6) - roe_aft_man(:, 6)) * a_chief * 1e3)
+ylabel('\deltai_y [m]')
+xlabel('Orbital Periods')
 
 %% Functions
 
@@ -986,7 +1041,7 @@ function STM = STM_QNSROE(t, a, e, i, omega, J2, R_E, mu)
     e_xf = e * cos(omega_f);
     e_yf = e * sin(omega_f);
 
-    STM(2,1) = -(3/2 * n + 7/2 * k * E * P);
+    STM(2,1) = -(3/2 * n + 7/2 * k * E * P) * t;
     STM(2,3) = k * e_xi * F * G * P * t;
     STM(2,4) = k * e_yi * F * G * P * t;
     STM(2,5) = -k * F * S * t;
