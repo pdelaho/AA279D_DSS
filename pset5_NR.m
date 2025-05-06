@@ -1,17 +1,22 @@
-%% Newton-Raphson method to determine the optimal true anomaly for a deltga e dominant case
+%% Newton-Raphson method to determine the optimal true anomaly for a delta e dominant case
 mu = 398600.435436; % km^3/s^2
-f(pi, 0.5, sqrt(mu / 15000^3), 307.646, 520.977*0.5)
-NR(pi, 0.5, sqrt(mu / 15000^3), 307.646, 520.977*0.5)
+
+f(0.8967, 0.5, sqrt(mu / 15000^3), 307.646, 520.977*0.5)
+nu = NR(pi-acos(0.5), 0.5, sqrt(mu / 15000^3), 307.646, 520.977*0.5)
 
 function x = NR(init_guess, e, n, delta_ex_des, delta_ey_des)
-    x_prev = inf;
+%     x_prev = inf;
     x = init_guess;
     i = 0;
+    f_val = f(x, e, n, delta_ex_des, delta_ey_des);
 
-    while abs(x - x_prev) > 1e-9 && i < 100
-        new_x = x - f(x, e, n, delta_ex_des, delta_ey_des) / f_der(x, e, n, delta_ex_des, delta_ey_des)
-        x_prev = x;
+    while abs(f_val) > 1e-12 && i < 100
+%         f(x, e, n, delta_ex_des, delta_ey_des)
+%         f_der(x, e, n, delta_ex_des, delta_ey_des)
+        new_x = x - f(x, e, n, delta_ex_des, delta_ey_des) / f_der(x, e, n, delta_ex_des, delta_ey_des);
+%         x_prev = x;
         x = new_x;
+        f_val = f(x, e, n, delta_ex_des, delta_ey_des);
         i = i+1;
     end
     i
@@ -68,7 +73,7 @@ function x = der_delta_vt(nu, e, delta_ex_des, delta_ey_des)
     delta_v = delta_vt(nu, e, delta_ex_des, delta_ey_des);
     f1_num = f1(nu, e);
     der_f1_num = der_f1(nu, e);
-    x = 0.5 * delta_v^(-0.5) * ( der_f1_num * 2 * (4+f1_num^2)^(0.5) / (4 * (4 +f1_num^2)) ...
+    x = 0.5 * (-1 / delta_v) * (der_f1_num * 2 * (4+f1_num^2)^(0.5) / (4 * (4 +f1_num^2)) ...
         - f1_num^2 * der_f1_num * (4+f1_num^2)^(-0.5) / (4*(4+f1_num^2)));
 end
 
