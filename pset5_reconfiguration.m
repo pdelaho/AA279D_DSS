@@ -1,3 +1,5 @@
+%% For reconfiguration
+
 %% Problem 1
 
 close all; clc; clear;
@@ -17,7 +19,8 @@ omega_chief = deg2rad(188);
 RAAN_chief = deg2rad(84);
 n_chief = sqrt(mu / a_chief^3);
 T = 2 * pi / n_chief;
-M_chief = n_chief * (14 * 3600 + 49 * 60);
+% M_chief = n_chief * (14 * 3600 + 49 * 60);
+M_chief = n_chief * (4 * 3600 + 49 * 60);
 nu_chief_PPM = mean2true(M_chief, e_chief);
 oe_chief_PPM = [a_chief, e_chief, inc_chief, omega_chief, RAAN_chief, M_chief];
 
@@ -50,7 +53,7 @@ norm(pos_chief);
 init_FODE = [pos_chief, vel_chief, pos_deputy, vel_deputy];
 options = odeset('RelTol', 1e-12, 'AbsTol', 1e-15, 'MaxStep', 100);
 N = 100000;
-tspan = linspace(0, 50 * T, N);
+tspan = linspace(0, 100 * T, N);
 [t, y] = ode89(@(t, state) FODE_2sats(t, state, mu), tspan, init_FODE, options);
 
 mod_ROE_gt = zeros(N,6);
@@ -76,187 +79,188 @@ for j=1:N
     nu_chief_cur = mean2true(oe_chief(6), oe_chief(2));
     nu_deputy_cur = mean2true(oe_deputy(6), oe_deputy(2));
     [pos_c, vel_c] = OE2ECI(oe_chief(1), oe_chief(2), oe_chief(3), oe_chief(4), oe_chief(5), nu_chief_cur, mu);
-    [pos_d, vel_d] = OE2ECI(oe_cdeputy(1), oe_deputy(2), oe_deputy(3), oe_deputy(4), oe_deputy(5), nu_deputy_cur, mu);
+    [pos_d, vel_d] = OE2ECI(oe_deputy(1), oe_deputy(2), oe_deputy(3), oe_deputy(4), oe_deputy(5), nu_deputy_cur, mu);
     rel_state_ECI = [pos_d', vel_d'] - [pos_c', vel_c'];
     rel_state_RTN = ECI2RTN([pos_c', vel_c'], rel_state_ECI, mu);
     rel_motion_RTN_stm(j, :) = rel_state_RTN;
     mod_ROE_stm(j, :) = mod_ROE;
 end
 
-figure
-subplot(3,2,1)
-hold on
-plot(t / T, mod_ROE_gt(:, 1) * a_chief * 1e3)
-plot(t / T, mod_ROE_stm(:, 1) * a_chief * 1e3)
-hold off
-grid on
-legend('Ground Truth', 'STM')
-ylabel('\deltaa [m]')
+% figure
+% subplot(3,2,1)
+% hold on
+% plot(t / T, mod_ROE_gt(:, 1) * a_chief * 1e3)
+% plot(t / T, mod_ROE_stm(:, 1) * a_chief * 1e3)
+% hold off
+% grid on
+% legend('Ground Truth', 'STM')
+% ylabel('\deltaa [m]')
+% 
+% subplot(3,2,3)
+% hold on
+% plot(t / T, mod_ROE_gt(:, 2) * a_chief * 1e3)
+% plot(t / T, mod_ROE_stm(:, 2) * a_chief * 1e3)
+% hold off
+% grid on
+% ylabel('\delta\lambda [m]')
+% 
+% subplot(3,2,5)
+% hold on
+% plot(t / T, mod_ROE_gt(:, 3) * a_chief * 1e3)
+% plot(t / T, mod_ROE_stm(:, 3) * a_chief * 1e3)
+% hold off
+% grid on
+% ylabel("\deltae_x' [m]")
+% xlabel('Orbital Periods')
+% 
+% subplot(3,2,2)
+% hold on
+% plot(t / T, mod_ROE_gt(:, 4) * a_chief * 1e3)
+% plot(t / T, mod_ROE_stm(:, 4) * a_chief * 1e3)
+% hold off
+% grid on
+% ylabel("\deltae_y' [m]")
+% 
+% subplot(3,2,4)
+% hold on
+% plot(t / T, mod_ROE_gt(:, 5) * a_chief * 1e3)
+% plot(t / T, mod_ROE_stm(:, 5) * a_chief * 1e3)
+% hold off
+% grid on
+% ylabel('\deltai_x [m]')
+% 
+% subplot(3,2,6)
+% hold on
+% plot(t / T, mod_ROE_gt(:, 6) * a_chief * 1e3)
+% plot(t / T, mod_ROE_stm(:, 6) * a_chief * 1e3)
+% hold off
+% grid on
+% ylabel('\deltai_y [m]')
+% xlabel('Orbital Periods')
+% 
+% figure
+% subplot(3,1,1)
+% hold on
+% plot(mod_ROE_gt(:, 2) * a_chief * 1e3, mod_ROE_gt(:, 1) * a_chief * 1e3)
+% plot(mod_ROE_stm(:, 2) * a_chief * 1e3, mod_ROE_stm(:, 1) * a_chief * 1e3, 'o')
+% hold off
+% axis equal
+% grid on
+% legend('Ground Truth', 'STM')
+% xlabel('\delta\lambda [m]')
+% ylabel('\deltaa [m]')
+% 
+% subplot(3,1,2)
+% hold on
+% plot(mod_ROE_gt(:,3) * a_chief * 1e3, mod_ROE_gt(:,4) * a_chief * 1e3)
+% plot(mod_ROE_stm(:,3) * a_chief * 1e3, mod_ROE_stm(:,4) * a_chief * 1e3, 'o')
+% hold off
+% axis equal
+% grid on
+% xlabel("\deltae_x' [m]")
+% ylabel("\deltae_y' [m]")
+% 
+% subplot(3,1,3)
+% hold on
+% plot(mod_ROE_gt(:,5) * a_chief * 1e3, mod_ROE_gt(:,6) * a_chief * 1e3)
+% plot(mod_ROE_stm(:,5) * a_chief * 1e3, mod_ROE_stm(:,6) * a_chief * 1e3,'o')
+% hold off
+% axis equal
+% grid on
+% xlabel('\deltai_x [m]')
+% ylabel('\deltai_y [m]')
+% 
+% figure
+% subplot(2,2,1)
+% plot(rel_motion_RTN_gt(:,2), rel_motion_RTN_gt(:,1))
+% axis equal
+% grid on
+% xlabel('T-axis [km]')
+% ylabel('R-axis [km]')
+% 
+% subplot(2,2,2)
+% plot(rel_motion_RTN_gt(:,3), rel_motion_RTN_gt(:,1))
+% axis equal
+% grid on
+% xlabel('N-axis [km]')
+% ylabel('R-axis [km]')
+% 
+% subplot(2,2,3)
+% plot(rel_motion_RTN_gt(:,2), rel_motion_RTN_gt(:,3))
+% axis equal
+% grid on
+% xlabel('T-axis [km]')
+% ylabel('N-axis [km]')
+% 
+% subplot(2,2,4)
+% plot3(rel_motion_RTN_gt(:,1), rel_motion_RTN_gt(:,2), rel_motion_RTN_gt(:,3))
+% view(3)
+% axis equal
+% grid on
+% xlabel('R-axis [km]')
+% ylabel('T-axis [km]')
+% zlabel('N-axis [km]')
+% 
+% figure
+% subplot(2,2,1)
+% plot(rel_motion_RTN_gt(:,5), rel_motion_RTN_gt(:,4))
+% axis equal
+% grid on
+% xlabel('T-axis [km/s]')
+% ylabel('R-axis [km/s]')
+% 
+% subplot(2,2,2)
+% plot(rel_motion_RTN_gt(:,6), rel_motion_RTN_gt(:,4))
+% axis equal
+% grid on
+% xlabel('N-axis [km/s]')
+% ylabel('R-axis [km/s]')
+% 
+% subplot(2,2,3)
+% plot(rel_motion_RTN_gt(:,5), rel_motion_RTN_gt(:,6))
+% axis equal
+% grid on
+% xlabel('T-axis [km/s]')
+% ylabel('N-axis [km/s]')
+% 
+% subplot(2,2,4)
+% plot3(rel_motion_RTN_gt(:,4), rel_motion_RTN_gt(:,5), rel_motion_RTN_gt(:,6))
+% view(3)
+% axis equal
+% grid on
+% xlabel('R-axis [km/s]')
+% ylabel('T-axis [km/s]')
+% zlabel('N-axis [km/S]')
+% 
+% figure
+% subplot(3,2,1)
+% plot(t / T, abs(rel_motion_RTN_gt(:,1) - rel_motion_RTN_stm(:,1)))
+% ylabel('Eror in R-axis [km]')
+% 
+% subplot(3,2,3)
+% plot(t / T, abs(rel_motion_RTN_gt(:,2) - rel_motion_RTN_stm(:,2)))
+% ylabel('Error in T-axis [km]')
+% 
+% subplot(3,2,5)
+% plot(t / T, abs(rel_motion_RTN_gt(:,3) - rel_motion_RTN_stm(:,3)))
+% ylabel('Error in N-axis [km]')
+% xlabel("Orbital Periods")
+% 
+% subplot(3,2,2)
+% plot(t / T, abs(rel_motion_RTN_gt(:,4) - rel_motion_RTN_stm(:,4)))
+% ylabel('Error in R-axis [km/s]')
+% 
+% subplot(3,2,4)
+% plot(t / T, abs(rel_motion_RTN_gt(:,5) - rel_motion_RTN_stm(:,5)))
+% ylabel('Error in T-axis [km/s]')
+% 
+% subplot(3,2,6)
+% plot(t / T, abs(rel_motion_RTN_gt(:,6) - rel_motion_RTN_stm(:,6)))
+% ylabel('Error in N-axis [km/s]')
+% xlabel('Orbital Periods')
 
-subplot(3,2,3)
-hold on
-plot(t / T, mod_ROE_gt(:, 2) * a_chief * 1e3)
-plot(t / T, mod_ROE_stm(:, 2) * a_chief * 1e3)
-hold off
-grid on
-ylabel('\delta\lambda [m]')
-
-subplot(3,2,5)
-hold on
-plot(t / T, mod_ROE_gt(:, 3) * a_chief * 1e3)
-plot(t / T, mod_ROE_stm(:, 3) * a_chief * 1e3)
-hold off
-grid on
-ylabel("\deltae_x' [m]")
-xlabel('Orbital Periods')
-
-subplot(3,2,2)
-hold on
-plot(t / T, mod_ROE_gt(:, 4) * a_chief * 1e3)
-plot(t / T, mod_ROE_stm(:, 4) * a_chief * 1e3)
-hold off
-grid on
-ylabel("\deltae_y' [m]")
-
-subplot(3,2,4)
-hold on
-plot(t / T, mod_ROE_gt(:, 5) * a_chief * 1e3)
-plot(t / T, mod_ROE_stm(:, 5) * a_chief * 1e3)
-hold off
-grid on
-ylabel('\deltai_x [m]')
-
-subplot(3,2,6)
-hold on
-plot(t / T, mod_ROE_gt(:, 6) * a_chief * 1e3)
-plot(t / T, mod_ROE_stm(:, 6) * a_chief * 1e3)
-hold off
-grid on
-ylabel('\deltai_y [m]')
-xlabel('Orbital Periods')
-
-figure
-subplot(3,1,1)
-hold on
-plot(mod_ROE_gt(:, 2), mod_ROE_gt(:, 1))
-plot(mod_ROE_stm(:, 2), mod_ROE_stm(:, 1), 'o')
-hold off
-axis equal
-grid on
-legend('Ground Truth', 'STM')
-xlabel('\delta\lambda [m]')
-ylabel('\deltaa [m]')
-
-subplot(3,1,2)
-hold on
-plot(mod_ROE_gt(:,3), mod_ROE_gt(:,4))
-plot(mod_ROE_stm(:,3), mod_ROE_stm(:,4), 'o')
-hold off
-axis equal
-grid on
-xlabel("\deltae_x' [m]")
-ylabel("\deltae_y' [m]")
-
-subplot(3,1,3)
-hold on
-plot(mod_ROE_gt(:,5), mod_ROE_gt(:,6))
-plot(mod_ROE_stm(:,5), mod_ROE_stm(:,6),'o')
-hold off
-axis equal
-grid on
-xlabel('\deltai_x [m]')
-ylabel('\deltai_y [m]')
-
-figure
-subplot(2,2,1)
-plot(rel_motion_RTN_gt(:,2), rel_motion_RTN_gt(:,1))
-axis equal
-grid on
-xlabel('T-axis [km]')
-ylabel('R-axis [km]')
-
-subplot(2,2,2)
-plot(rel_motion_RTN_gt(:,3), rel_motion_RTN_gt(:,1))
-axis equal
-grid on
-xlabel('N-axis [km]')
-ylabel('R-axis [km]')
-
-subplot(2,2,3)
-plot(rel_motion_RTN_gt(:,2), rel_motion_RTN_gt(:,3))
-axis equal
-grid on
-xlabel('T-axis [km]')
-ylabel('N-axis [km]')
-
-subplot(2,2,4)
-plot3(rel_motion_RTN_gt(:,1), rel_motion_RTN_gt(:,2), rel_motion_RTN_gt(:,3))
-view(3)
-axis equal
-grid on
-xlabel('R-axis [km]')
-ylabel('T-axis [km]')
-zlabel('N-axis [km]')
-
-figure
-subplot(2,2,1)
-plot(rel_motion_RTN_gt(:,5), rel_motion_RTN_gt(:,4))
-axis equal
-grid on
-xlabel('T-axis [km/s]')
-ylabel('R-axis [km/s]')
-
-subplot(2,2,2)
-plot(rel_motion_RTN_gt(:,6), rel_motion_RTN_gt(:,4))
-axis equal
-grid on
-xlabel('N-axis [km/s]')
-ylabel('R-axis [km/s]')
-
-subplot(2,2,3)
-plot(rel_motion_RTN_gt(:,5), rel_motion_RTN_gt(:,6))
-axis equal
-grid on
-xlabel('T-axis [km/s]')
-ylabel('N-axis [km/s]')
-
-subplot(2,2,4)
-plot3(rel_motion_RTN_gt(:,4), rel_motion_RTN_gt(:,5), rel_motion_RTN_gt(:,6))
-view(3)
-axis equal
-grid on
-xlabel('R-axis [km/s]')
-ylabel('T-axis [km/s]')
-zlabel('N-axis [km/S]')
-
-figure
-subplot(3,2,1)
-plot(t / T, abs(rel_motion_RTN_gt(:,1) - rel_motion_RTN_stm(:,1)))
-ylabel('Eror in R-axis [km]')
-
-subplot(3,2,3)
-plot(t / T, abs(rel_motion_RTN_gt(:,2) - rel_motion_RTN_stm(:,2)))
-ylabel('Error in T-axis [km]')
-
-subplot(3,2,5)
-plot(t / T, abs(rel_motion_RTN_gt(:,3) - rel_motion_RTN_stm(:,3)))
-ylabel('Error in N-axis [km]')
-xlabel("Orbital Periods")
-
-subplot(3,2,2)
-plot(t / T, abs(rel_motion_RTN_gt(:,4) - rel_motion_RTN_stm(:,4)))
-ylabel('Error in R-axis [km/s]')
-
-subplot(3,2,4)
-plot(t / T, abs(rel_motion_RTN_gt(:,5) - rel_motion_RTN_stm(:,5)))
-ylabel('Error in T-axis [km/s]')
-
-subplot(3,2,6)
-plot(t / T, abs(rel_motion_RTN_gt(:,6) - rel_motion_RTN_stm(:,6)))
-ylabel('Error in N-axis [km/s]')
-xlabel('Orbital Periods')
-
-%% Reconfiguration from Perigee Pass Mode to Inertial Attitude Mode using least squares
+%% Problem 2
+% Reconfiguration from Perigee Pass Mode to Inertial Attitude Mode using least squares
 
 % Defining the ROE for Inertial Attitude Mode (IAM)
 
@@ -288,6 +292,11 @@ init_mod_ROE_IAM = OE2ROE_modified(oe_chief_IAM, oe_deputy_IAM)';
 % Compute the pseudostate
 STM_f0 = STM_ROE(2 * 3600, n_chief); % 2 hours to perform the reconfiguration
 delta_alpha = init_mod_ROE_IAM - STM_f0 * init_mod_ROE_PPM;
+
+% Compuuting delta-V lower bound
+abs(delta_alpha(1)) * n_chief * a_chief * sqrt(1-e_chief^2) / (2*(1+e_chief))
+abs(delta_alpha(2)) * n_chief * a_chief * sqrt(1-e_chief^2) / (3*(1+e_chief)*n_chief*2*3600)
+norm([delta_ex - init_ROE_PPM(3), delta_ey - init_ROE_PPM(4)]) * n_chief * a_chief * sqrt(1-e_chief^2) / sqrt(3*e_chief^4 - 7 * e_chief^2 + 4)
 
 % Seeting the least squares to solve the control problem
 B_0 = control_matrix(mean2true(oe_chief_IAM(6), e_chief), e_chief, a_chief, n_chief, omega_chief);
@@ -467,88 +476,192 @@ end
 figure
 subplot(3,2,1)
 hold on
-% plot((4 * 3600 + 49 * 60) / T, delta_a * a_chief * 1e3, 'o')
-plot(t_01 / T, ROE_gt_01(:, 1) * a_chief * 1e3)
-plot(t_12 / T, ROE_gt_12(:, 1) * a_chief * 1e3)
-plot(t_23 / T, ROE_gt_23(:, 1) * a_chief * 1e3)
-plot(t_34 / T, ROE_gt_34(:, 1) * a_chief * 1e3)
-plot(t_45 / T, ROE_gt_45(:, 1) * a_chief * 1e3)
-plot(t_56 / T, ROE_gt_56(:, 1) * a_chief * 1e3)
-% plot(t_34(end) / T, ROE_final(1) * a_chief * 1e3, 'x')
+plot((4 * 3600 + 49 * 60) / T, init_mod_ROE_PPM(1) * a_chief * 1e3, 'ro')
+plot(t_56(end) / T, init_mod_ROE_IAM(1) * a_chief * 1e3, 'rx')
+plot(t_01 / T, ROE_gt_01(:, 1) * a_chief * 1e3, 'b-')
+plot(t_12 / T, ROE_gt_12(:, 1) * a_chief * 1e3, 'b-')
+plot(t_23 / T, ROE_gt_23(:, 1) * a_chief * 1e3, 'b-')
+plot(t_34 / T, ROE_gt_34(:, 1) * a_chief * 1e3, 'b-')
+plot(t_45 / T, ROE_gt_45(:, 1) * a_chief * 1e3, 'b-')
+plot(t_56 / T, ROE_gt_56(:, 1) * a_chief * 1e3, 'b-')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k', {'\deltaV', '\deltaV', '\deltaV', '\deltaV', '\deltaV', '\deltaV'})
 hold off
 grid on
-% legend('Ground Truth', 'STM')
-ylabel('\deltaa')
+legend('Initial', 'Target')
+ylabel('\deltaa [m]')
 
 subplot(3,2,3)
 hold on
-% plot((4 * 3600 + 49 * 60) / T, delta_lambda * a_chief * 1e3, 'o')
-plot(t_01 / T, ROE_gt_01(:, 2) * a_chief * 1e3)
-plot(t_12 / T, ROE_gt_12(:, 2) * a_chief * 1e3)
-plot(t_23 / T, ROE_gt_23(:, 2) * a_chief * 1e3)
-plot(t_34 / T, ROE_gt_34(:, 2) * a_chief * 1e3)
-plot(t_45 / T, ROE_gt_45(:, 2) * a_chief * 1e3)
-plot(t_56 / T, ROE_gt_56(:, 2) * a_chief * 1e3)
-% plot(t_34(end) / T, ROE_final(2) * a_chief * 1e3, 'x')
+plot((4 * 3600 + 49 * 60) / T, init_mod_ROE_PPM(2) * a_chief * 1e3, 'ro')
+plot(t_01 / T, ROE_gt_01(:, 2) * a_chief * 1e3, 'b-')
+plot(t_12 / T, ROE_gt_12(:, 2) * a_chief * 1e3, 'b-')
+plot(t_23 / T, ROE_gt_23(:, 2) * a_chief * 1e3, 'b-')
+plot(t_34 / T, ROE_gt_34(:, 2) * a_chief * 1e3, 'b-')
+plot(t_45 / T, ROE_gt_45(:, 2) * a_chief * 1e3, 'b-')
+plot(t_56 / T, ROE_gt_56(:, 2) * a_chief * 1e3, 'b-')
+plot(t_56(end) / T, init_mod_ROE_IAM(2) * a_chief * 1e3, 'rx')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k')
 hold off
 grid on
-ylabel('\delta\lambda')
+ylabel('\delta\lambda [m]')
 
 subplot(3,2,5)
 hold on
-% plot((4 * 3600 + 49 * 60) / T, delta_ex * a_chief * 1e3, 'o')
-plot(t_01 / T, ROE_gt_01(:, 3) * a_chief * 1e3)
-plot(t_12 / T, ROE_gt_12(:, 3) * a_chief * 1e3)
-plot(t_23 / T, ROE_gt_23(:, 3) * a_chief * 1e3)
-plot(t_34 / T, ROE_gt_34(:, 3) * a_chief * 1e3)
-plot(t_45 / T, ROE_gt_45(:, 3) * a_chief * 1e3)
-plot(t_56 / T, ROE_gt_56(:, 3) * a_chief * 1e3)
-% plot(t_34(end) / T, ROE_final(3) * a_chief * 1e3, 'x')
+plot((4 * 3600 + 49 * 60) / T, init_mod_ROE_PPM(3) * a_chief * 1e3, 'ro')
+plot(t_01 / T, ROE_gt_01(:, 3) * a_chief * 1e3, 'b-')
+plot(t_12 / T, ROE_gt_12(:, 3) * a_chief * 1e3, 'b-')
+plot(t_23 / T, ROE_gt_23(:, 3) * a_chief * 1e3, 'b-')
+plot(t_34 / T, ROE_gt_34(:, 3) * a_chief * 1e3, 'b-')
+plot(t_45 / T, ROE_gt_45(:, 3) * a_chief * 1e3, 'b-')
+plot(t_56 / T, ROE_gt_56(:, 3) * a_chief * 1e3, 'b-')
+plot(t_56(end) / T, init_mod_ROE_IAM(3) * a_chief * 1e3, 'rx')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k')
 hold off
 grid on
-ylabel("\deltae_x'")
+ylabel("\deltae_x' [m]")
+xlabel('Orbital Periods')
 
 subplot(3,2,2)
 hold on
-% plot((4 * 3600 + 49 * 60) / T, delta_ey * a_chief * 1e3, 'o')
-plot(t_01 / T, ROE_gt_01(:, 4) * a_chief * 1e3)
-plot(t_12 / T, ROE_gt_12(:, 4) * a_chief * 1e3)
-plot(t_23 / T, ROE_gt_23(:, 4) * a_chief * 1e3)
-plot(t_34 / T, ROE_gt_34(:, 4) * a_chief * 1e3)
-plot(t_45 / T, ROE_gt_45(:, 4) * a_chief * 1e3)
-plot(t_56 / T, ROE_gt_56(:, 4) * a_chief * 1e3)
-% plot(t_34(end) / T, ROE_final(4) * a_chief * 1e3, 'x')
+plot((4 * 3600 + 49 * 60) / T, init_mod_ROE_PPM(4) * a_chief * 1e3, 'ro')
+plot(t_01 / T, ROE_gt_01(:, 4) * a_chief * 1e3, 'b-')
+plot(t_12 / T, ROE_gt_12(:, 4) * a_chief * 1e3, 'b-')
+plot(t_23 / T, ROE_gt_23(:, 4) * a_chief * 1e3, 'b-')
+plot(t_34 / T, ROE_gt_34(:, 4) * a_chief * 1e3, 'b-')
+plot(t_45 / T, ROE_gt_45(:, 4) * a_chief * 1e3, 'b-')
+plot(t_56 / T, ROE_gt_56(:, 4) * a_chief * 1e3, 'b-')
+plot(t_56(end) / T, init_mod_ROE_IAM(4) * a_chief * 1e3, 'rx')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k', {'\deltaV', '\deltaV', '\deltaV', '\deltaV', '\deltaV', '\deltaV'})
 hold off
 grid on
-ylabel("\deltae_y'")
+ylabel("\deltae_y' [m]")
 
 subplot(3,2,4)
 hold on
-% plot((4 * 3600 + 49 * 60) / T, delta_ix * a_chief * 1e3, 'o')
-plot(t_01 / T, ROE_gt_01(:, 5) * a_chief * 1e3)
-plot(t_12 / T, ROE_gt_12(:, 5) * a_chief * 1e3)
-plot(t_23 / T, ROE_gt_23(:, 5) * a_chief * 1e3)
-plot(t_34 / T, ROE_gt_34(:, 5) * a_chief * 1e3)
-plot(t_45 / T, ROE_gt_45(:, 5) * a_chief * 1e3)
-plot(t_56 / T, ROE_gt_56(:, 5) * a_chief * 1e3)
-% plot(t_34(end) / T, ROE_final(5) * a_chief * 1e3, 'x')
+plot((4 * 3600 + 49 * 60) / T, init_mod_ROE_PPM(5) * a_chief * 1e3, 'ro')
+plot(t_01 / T, ROE_gt_01(:, 5) * a_chief * 1e3, 'b-')
+plot(t_12 / T, ROE_gt_12(:, 5) * a_chief * 1e3, 'b-')
+plot(t_23 / T, ROE_gt_23(:, 5) * a_chief * 1e3, 'b-')
+plot(t_34 / T, ROE_gt_34(:, 5) * a_chief * 1e3, 'b-')
+plot(t_45 / T, ROE_gt_45(:, 5) * a_chief * 1e3, 'b-')
+plot(t_56 / T, ROE_gt_56(:, 5) * a_chief * 1e3, 'b-')
+plot(t_56(end) / T, init_mod_ROE_IAM(5) * a_chief * 1e3, 'rx')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k')
 hold off
 grid on
-ylabel('\deltai_x')
+ylabel('\deltai_x [m]')
 
 subplot(3,2,6)
 hold on
-% plot((4 * 3600 + 49 * 60) / T, delta_iy * a_chief * 1e3, 'o')
-plot(t_01 / T, ROE_gt_01(:, 6) * a_chief * 1e3)
-plot(t_12 / T, ROE_gt_12(:, 6) * a_chief * 1e3)
-plot(t_23 / T, ROE_gt_23(:, 6) * a_chief * 1e3)
-plot(t_34 / T, ROE_gt_34(:, 6) * a_chief * 1e3)
-plot(t_45 / T, ROE_gt_45(:, 6) * a_chief * 1e3)
-plot(t_56 / T, ROE_gt_56(:, 6) * a_chief * 1e3)
-% plot(t_34(end) / T, ROE_final(6) * a_chief * 1e3, 'x')
+plot((4 * 3600 + 49 * 60) / T, init_mod_ROE_PPM(6) * a_chief * 1e3, 'ro')
+plot(t_01 / T, ROE_gt_01(:, 6) * a_chief * 1e3, 'b-')
+plot(t_12 / T, ROE_gt_12(:, 6) * a_chief * 1e3, 'b-')
+plot(t_23 / T, ROE_gt_23(:, 6) * a_chief * 1e3, 'b-')
+plot(t_34 / T, ROE_gt_34(:, 6) * a_chief * 1e3, 'b-')
+plot(t_45 / T, ROE_gt_45(:, 6) * a_chief * 1e3, 'b-')
+plot(t_56 / T, ROE_gt_56(:, 6) * a_chief * 1e3, 'b-')
+plot(t_56(end) / T, init_mod_ROE_IAM(6) * a_chief * 1e3, 'rx')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k')
 hold off
 grid on
-ylabel('\deltai_y')
+ylabel('\deltai_y [m]')
+xlabel('Orbital Periods')
+
+% Control errors and maneuver planning
+
+figure
+subplot(3,2,1)
+hold on
+plot((4 * 3600 + 49 * 60) / T, (init_mod_ROE_PPM(1)-init_mod_ROE_IAM(1)) * a_chief * 1e3, 'ro')
+plot(t_56(end) / T, 0, 'rx')
+plot(t_01 / T, (ROE_gt_01(:, 1)-init_mod_ROE_IAM(1)) * a_chief * 1e3, 'b-')
+plot(t_12 / T, (ROE_gt_12(:, 1)-init_mod_ROE_IAM(1)) * a_chief * 1e3, 'b-')
+plot(t_23 / T, (ROE_gt_23(:, 1)-init_mod_ROE_IAM(1)) * a_chief * 1e3, 'b-')
+plot(t_34 / T, (ROE_gt_34(:, 1)-init_mod_ROE_IAM(1)) * a_chief * 1e3, 'b-')
+plot(t_45 / T, (ROE_gt_45(:, 1)-init_mod_ROE_IAM(1)) * a_chief * 1e3, 'b-')
+plot(t_56 / T, (ROE_gt_56(:, 1)-init_mod_ROE_IAM(1)) * a_chief * 1e3, 'b-')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k', {'\deltaV', '\deltaV', '\deltaV', '\deltaV', '\deltaV', '\deltaV'})
+hold off
+grid on
+legend('Initial', 'Target')
+ylabel('\deltaa [m]')
+
+subplot(3,2,3)
+hold on
+plot((4 * 3600 + 49 * 60) / T, (init_mod_ROE_PPM(2)-init_mod_ROE_IAM(2)) * a_chief * 1e3, 'ro')
+plot(t_01 / T, (ROE_gt_01(:, 2)-init_mod_ROE_IAM(2)) * a_chief * 1e3, 'b-')
+plot(t_12 / T, (ROE_gt_12(:, 2)-init_mod_ROE_IAM(2)) * a_chief * 1e3, 'b-')
+plot(t_23 / T, (ROE_gt_23(:, 2)-init_mod_ROE_IAM(2)) * a_chief * 1e3, 'b-')
+plot(t_34 / T, (ROE_gt_34(:, 2)-init_mod_ROE_IAM(2)) * a_chief * 1e3, 'b-')
+plot(t_45 / T, (ROE_gt_45(:, 2)-init_mod_ROE_IAM(2)) * a_chief * 1e3, 'b-')
+plot(t_56 / T, (ROE_gt_56(:, 2)-init_mod_ROE_IAM(2)) * a_chief * 1e3, 'b-')
+plot(t_56(end) / T, 0, 'rx')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k')
+hold off
+grid on
+ylabel('\delta\lambda [m]')
+
+subplot(3,2,5)
+hold on
+plot((4 * 3600 + 49 * 60) / T, (init_mod_ROE_PPM(3)-init_mod_ROE_IAM(3)) * a_chief * 1e3, 'ro')
+plot(t_01 / T, (ROE_gt_01(:, 3)-init_mod_ROE_IAM(3)) * a_chief * 1e3, 'b-')
+plot(t_12 / T, (ROE_gt_12(:, 3)-init_mod_ROE_IAM(3)) * a_chief * 1e3, 'b-')
+plot(t_23 / T, (ROE_gt_23(:, 3)-init_mod_ROE_IAM(3)) * a_chief * 1e3, 'b-')
+plot(t_34 / T, (ROE_gt_34(:, 3)-init_mod_ROE_IAM(3)) * a_chief * 1e3, 'b-')
+plot(t_45 / T, (ROE_gt_45(:, 3)-init_mod_ROE_IAM(3)) * a_chief * 1e3, 'b-')
+plot(t_56 / T, (ROE_gt_56(:, 3)-init_mod_ROE_IAM(3)) * a_chief * 1e3, 'b-')
+plot(t_56(end) / T, 0, 'rx')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k')
+hold off
+grid on
+ylabel("\deltae_x' [m]")
+xlabel('Orbital Periods')
+
+subplot(3,2,2)
+hold on
+plot((4 * 3600 + 49 * 60) / T, (init_mod_ROE_PPM(4)-init_mod_ROE_IAM(4)) * a_chief * 1e3, 'ro')
+plot(t_01 / T, (ROE_gt_01(:, 4)-init_mod_ROE_IAM(4)) * a_chief * 1e3, 'b-')
+plot(t_12 / T, (ROE_gt_12(:, 4)-init_mod_ROE_IAM(4)) * a_chief * 1e3, 'b-')
+plot(t_23 / T, (ROE_gt_23(:, 4)-init_mod_ROE_IAM(4)) * a_chief * 1e3, 'b-')
+plot(t_34 / T, (ROE_gt_34(:, 4)-init_mod_ROE_IAM(4)) * a_chief * 1e3, 'b-')
+plot(t_45 / T, (ROE_gt_45(:, 4)-init_mod_ROE_IAM(4)) * a_chief * 1e3, 'b-')
+plot(t_56 / T, (ROE_gt_56(:, 4)-init_mod_ROE_IAM(4)) * a_chief * 1e3, 'b-')
+plot(t_56(end) / T, 0, 'rx')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k', {'\deltaV', '\deltaV', '\deltaV', '\deltaV', '\deltaV', '\deltaV'})
+hold off
+grid on
+ylabel("\deltae_y' [m]")
+
+subplot(3,2,4)
+hold on
+plot((4 * 3600 + 49 * 60) / T, (init_mod_ROE_PPM(5)-init_mod_ROE_IAM(5)) * a_chief * 1e3, 'ro')
+plot(t_01 / T, (ROE_gt_01(:, 5)-init_mod_ROE_IAM(5)) * a_chief * 1e3, 'b-')
+plot(t_12 / T, (ROE_gt_12(:, 5)-init_mod_ROE_IAM(5)) * a_chief * 1e3, 'b-')
+plot(t_23 / T, (ROE_gt_23(:, 5)-init_mod_ROE_IAM(5)) * a_chief * 1e3, 'b-')
+plot(t_34 / T, (ROE_gt_34(:, 5)-init_mod_ROE_IAM(5)) * a_chief * 1e3, 'b-')
+plot(t_45 / T, (ROE_gt_45(:, 5)-init_mod_ROE_IAM(5)) * a_chief * 1e3, 'b-')
+plot(t_56 / T, (ROE_gt_56(:, 5)-init_mod_ROE_IAM(5)) * a_chief * 1e3, 'b-')
+plot(t_56(end) / T, 0, 'rx')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k')
+hold off
+grid on
+ylabel('\deltai_x [m]')
+
+subplot(3,2,6)
+hold on
+plot((4 * 3600 + 49 * 60) / T, (init_mod_ROE_PPM(6)-init_mod_ROE_IAM(6)) * a_chief * 1e3, 'ro')
+plot(t_01 / T, (ROE_gt_01(:, 6)-init_mod_ROE_IAM(6)) * a_chief * 1e3, 'b-')
+plot(t_12 / T, (ROE_gt_12(:, 6)-init_mod_ROE_IAM(6)) * a_chief * 1e3, 'b-')
+plot(t_23 / T, (ROE_gt_23(:, 6)-init_mod_ROE_IAM(6)) * a_chief * 1e3, 'b-')
+plot(t_34 / T, (ROE_gt_34(:, 6)-init_mod_ROE_IAM(6)) * a_chief * 1e3, 'b-')
+plot(t_45 / T, (ROE_gt_45(:, 6)-init_mod_ROE_IAM(6)) * a_chief * 1e3, 'b-')
+plot(t_56 / T, (ROE_gt_56(:, 6)-init_mod_ROE_IAM(6)) * a_chief * 1e3, 'b-')
+plot(t_56(end) / T, 0, 'rx')
+xline([t_01(1)/T t_01(end)/T t_12(end)/T t_23(end)/T t_34(end)/T t_45(end)/T], '--k')
+hold off
+grid on
+ylabel('\deltai_y [m]')
+xlabel('Orbital Periods')
 
 %% Funtions
 
@@ -639,4 +752,57 @@ function statedot = FODE_2sats(t, state, mu)
 
     statedot(4:6) = - mu * r0 / norm(r0)^3;
     statedot(10:12) = - mu * r1 / norm(r1)^3;
+end
+
+function statedot = FODE_2sats_J2(t, state, mu, J2, R_E)
+    statedot = zeros(size(state));
+    statedot(1:3) = state(4:6);
+    statedot(7:9) = state(10:12);
+    r1 = norm(state(1:3));
+    d = - mu .* J2 .* R_E.^2 ./ 2 .* (6 .* state(3) ./ r1.^5 .* [0 0 1] + (3 ./ r1.^4 - 15 .* state(3).^2 ./ r1.^6) .* state(1:3)' ./ r1);
+    statedot(4:6) = - mu .* state(1:3) ./ r1.^3 + d';
+    r2 = norm(state(7:9));
+    d = - mu .* J2 .* R_E.^2 ./ 2 .* (6 .* state(9) ./ r2.^5 .* [0 0 1] + (3 ./ r2.^4 - 15 .* state(9).^2 ./ r2.^6) .* state(7:9)' ./ r2);
+    statedot(10:12) = - mu .* state(7:9) ./ r2.^3 + d';
+end
+
+function STM = STM_ROE_J2(t, a, e, i, omega, J2, R_E, mu)
+    STM = eye(6);
+    eta = sqrt(1 - e^2);
+    n = sqrt(mu / a^3);
+    k = 3 * J2 * R_E^2 * sqrt(mu) / (4 * a^(7/2) * eta^4);
+    E = 1 + eta;
+    F = 4 + 3 * eta;
+    G = 1 / eta^2;
+    P = 3 * cos(i)^2 - 1;
+    Q = 5 * cos(i)^2 - 1;
+    S = sin(2*i);
+    T = sin(i)^2;
+
+    e_xi = e * cos(omega);
+    e_yi = e * sin(omega);
+    omega_dot = k * Q;
+    omega_f = omega + omega_dot * t;
+    e_xf = e * cos(omega_f);
+    e_yf = e * sin(omega_f);
+
+    STM(2,1) = -(3/2 * n + 7/2 * k * E * P) * t;
+    STM(2,3) = k * e_xi * F * G * P * t;
+    STM(2,4) = k * e_yi * F * G * P * t;
+    STM(2,5) = -k * F * S * t;
+
+    STM(3,1) = 7/2 * k * e_yf * Q * t;
+    STM(3,3) = cos(omega_dot * t) - 4 * k * e_xi * e_yf * G * Q * t;
+    STM(3,4) = - sin(omega_dot * t) - 4 *k * e_yi * e_yf * G * Q * t;
+    STM(3,5) = 5 * k * e_yf * S * t;
+
+    STM(4,1) = -7/2 * k * e_xf * Q * t;
+    STM(4,3) = sin(omega_dot * t) + 4 * k * e_xi * e_xf * G * Q * t;
+    STM(4,4) = cos(omega_dot * t) + 4 * k * e_yi * e_xf * G * Q * t;
+    STM(4,5) = -5 *k * e_xf * S * t;
+
+    STM(6,1) = 7/2 * k * S * t;
+    STM(6,3) = -4 * k * e_xi * G * S * t;
+    STM(6,4) = -4 * k * e_yi * G * S * t;
+    STM(6,5) = 2 * k * T * t;
 end
