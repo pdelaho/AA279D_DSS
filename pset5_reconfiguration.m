@@ -739,7 +739,7 @@ function B = control_matrix_2(nu, e, i, a, n, omega)
     B_nd(4,3) = - eta * e * cos(omega) * sin(nu+omega) / ((tan(i)) * (1+e*cos(nu)));
     B_nd(5,3) = eta * cos(nu+omega) / (1+e*cos(nu));
     B_nd(6,3) = eta * sin(nu+omega) / (1+e*cos(nu));
-    B = B_nd / (n * a);
+    B = B_nd ./ (n .* a);
 end
 
 function statedot = FODE_2sats(t, state, mu)

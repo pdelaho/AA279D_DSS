@@ -19,7 +19,7 @@ function x = NR(init_guess, e, n, delta_ex_des, delta_ey_des)
         f_val = f(x, e, n, delta_ex_des, delta_ey_des);
         i = i+1;
     end
-    i
+%     i
 end
 
 %% Functions
