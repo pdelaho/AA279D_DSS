@@ -1,8 +1,9 @@
 %% Newton-Raphson method to determine the optimal true anomaly for a delta e dominant case
 mu = 398600.435436; % km^3/s^2
 
-f(0.8967, 0.5, sqrt(mu / 15000^3), 307.646, 520.977*0.5)
-nu = NR(pi-acos(0.5), 0.5, sqrt(mu / 15000^3), 307.646, 520.977*0.5)
+f(-3.7140, 0.5, sqrt(mu / 15000^3), 307.646, 520.977*0.5)
+nu = NR((2*pi+acos(0.5))/2, 0.5, sqrt(mu / 15000^3), 307.646, 520.977*0.5)
+nu2 = bissection(pi+1e-12, pi+acos(0.5), 0.5, sqrt(mu / 15000^3), 307.646, 520.977*0.5)
 
 function x = NR(init_guess, e, n, delta_ex_des, delta_ey_des)
 %     x_prev = inf;
@@ -19,7 +20,7 @@ function x = NR(init_guess, e, n, delta_ex_des, delta_ey_des)
         f_val = f(x, e, n, delta_ex_des, delta_ey_des);
         i = i+1;
     end
-%     i
+    i
 end
 
 %% Functions
@@ -73,8 +74,13 @@ function x = der_delta_vt(nu, e, delta_ex_des, delta_ey_des)
     delta_v = delta_vt(nu, e, delta_ex_des, delta_ey_des);
     f1_num = f1(nu, e);
     der_f1_num = der_f1(nu, e);
-    x = 0.5 * (-1 / delta_v) * (der_f1_num * 2 * (4+f1_num^2)^(0.5) / (4 * (4 +f1_num^2)) ...
-        - f1_num^2 * der_f1_num * (4+f1_num^2)^(-0.5) / (4*(4+f1_num^2)));
+    if sign(delta_ex_des) == sign(delta_ey_des)
+        x = 0.5 * (-1 / delta_v) * (der_f1_num * 2 * (4+f1_num^2)^(0.5) / (4 * (4 +f1_num^2)) ...
+            - 2 * f1_num^2 * der_f1_num * (4+f1_num^2)^(-0.5) / (4*(4+f1_num^2)));
+    else
+        x = 0.5 * (1 / delta_v) * (der_f1_num * 2 * (4+f1_num^2)^(0.5)) / (4 * (4+f1_num^2)) ...
+            - 2 * f1_num^2 * der_f1_num * (4+f1_num^2)^(-0.5) / (4 * (4+f1_num^2));
+    end
 end
 
 function x = der_f1(nu, e)
@@ -85,4 +91,33 @@ end
 
 function x = der_f2(nu, e)
     x = -4*e^2*cos(nu)*sin(nu) - 6*e*sin(nu);
+end
+
+function x = bissection(a, b, e, n, delta_ex_des, delta_ey_des)
+    % think about if I want the angle to be always between -pi and pi or 0
+    % and 2*pi
+    if f(a, e, n, delta_ex_des, delta_ey_des) == 0
+        x = a;
+    elseif f(b, e, n, delta_ex_des, delta_ey_des) == 0
+        x = b;
+    elseif f(a, e, n, delta_ex_des, delta_ey_des) * f(b, e, n, delta_ex_des, delta_ey_des) > 0
+        x = inf;
+    else
+        i = 0;
+        while (b-a) / 2 > 1e-9 && i<50
+            i
+            c = (b+a) / 2;
+            if f(c, e, n, delta_ex_des, delta_ey_des) == 0
+                x = c;
+                break
+            end
+            if f(a, e, n, delta_ex_des, delta_ey_des) * f(c, e, n, delta_ex_des, delta_ey_des) < 0
+                b = c;
+            else
+                a = c;
+            end
+            i = i + 1;
+        end
+        x = c;
+    end
 end
