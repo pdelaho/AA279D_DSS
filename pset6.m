@@ -80,8 +80,8 @@ ROE_IAM = OE2ROE(oe_chief_IAM, oe_deputy_IAM);
 [pos_chief, vel_chief] = OE2ECI(oe_chief_PPM(1), oe_chief_PPM(2), oe_chief_PPM(3), oe_chief_PPM(4), oe_chief_PPM(5), nu_chief_PPM, mu);
 [pos_deputy, vel_deputy] = OE2ECI(oe_deputy_PPM(1), oe_deputy_PPM(2), oe_deputy_PPM(3), oe_deputy_PPM(4), oe_deputy_PPM(5), nu_deputy_PPM, mu);
 
-N = 20000;
-reconfiguration_tspan = linspace(0, 20 * T_chief, N); % to first try and debug code before doing it for longer to see convergence
+N = 40000;
+reconfiguration_tspan = linspace(0, 40 * T_chief, N); % to first try and debug code before doing it for longer to see convergence
 state_chief_history = zeros(N,6);
 state_chief_history(1,:) = [pos_chief', vel_chief'];
 
@@ -110,12 +110,28 @@ for j=1:N-1
     ROE_cur = OE2ROE(oe_chief_temp, oe_deputy_temp);
     modified_ROE_history(j,:) = modified_ROE_cur;
     delta_alpha = modified_ROE_cur - modified_ROE_IAM;
-%     delta_alpha = ROE_cur - ROE_IAM;
     control_tracking_error_history(j,:) = delta_alpha;
 
     % For now, not controlling delta_lambda so applied reference =
     % reference
     modified_ROE_applied = modified_ROE_IAM;
+
+    % Trying to control delta_lambda
+    if abs(delta_alpha(2)) > 1e-6
+%         j
+        % From Steindorf
+%         delta_v_orbit = 3 / 4 * pi * T_max; % specifically when N = 4 in gain matrix
+%         delta_a_tan = 2 / (oe_chief_temp(1) * sqrt(mu / oe_chief_temp(1)^3) * sqrt(1-oe_chief_temp(2)^2)) * (1+oe_chief_temp(2)*cos(nu_chief_temp)) * delta_v_orbit / 2;
+%         delta_a_des = abs(delta_a_tan) / 2;
+%         delta_lambda_ref = sign(delta_alpha(2)) * min([abs(delta_alpha(2)) / (100 * T_chief), 3 / 2 * sqrt(mu / oe_chief_temp(1)^3) * delta_a_des]);
+%         delta_a_applied = -2 / 3 * delta_lambda_ref / sqrt(mu / oe_chief_temp(1^3));
+%         modified_ROE_applied(1) = delta_a_applied;
+
+        % From Lippe
+        delta_a_applied = sign(delta_alpha(2)) * min([abs(delta_alpha(2)) / (500e-3 / oe_chief_temp(1)), 200e-3 / oe_chief_temp(1)]);
+        modified_ROE_applied(1) = delta_a_applied;
+    end
+
     delta_alpha_applied = modified_ROE_cur - modified_ROE_applied;
 %     delta_alpha_applied = delta_alpha;
 
