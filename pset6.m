@@ -80,8 +80,9 @@ ROE_IAM = OE2ROE(oe_chief_IAM, oe_deputy_IAM);
 [pos_chief, vel_chief] = OE2ECI(oe_chief_PPM(1), oe_chief_PPM(2), oe_chief_PPM(3), oe_chief_PPM(4), oe_chief_PPM(5), nu_chief_PPM, mu);
 [pos_deputy, vel_deputy] = OE2ECI(oe_deputy_PPM(1), oe_deputy_PPM(2), oe_deputy_PPM(3), oe_deputy_PPM(4), oe_deputy_PPM(5), nu_deputy_PPM, mu);
 
-N = 40000;
-reconfiguration_tspan = linspace(0, 40 * T_chief, N); % to first try and debug code before doing it for longer to see convergence
+N = 30000;
+reconfiguration_tspan = linspace(0, 30 * T_chief, N);
+dt = reconfiguration_tspan(2) - reconfiguration_tspan(1);
 state_chief_history = zeros(N,6);
 state_chief_history(1,:) = [pos_chief', vel_chief'];
 
@@ -89,7 +90,8 @@ state_deputy_history = zeros(N,6);
 state_deputy_history(1,:) = [pos_deputy', vel_deputy'];
 
 modified_ROE_history = zeros(N, 6);
-u_history = zeros(N, 2);
+u_history = zeros(N-1, 2);
+total_dv = zeros(N-1,2);
 control_tracking_error_history = zeros(N,6);
 
 % Do a first try where you don't control delta_lambda but everything else,
@@ -97,7 +99,7 @@ control_tracking_error_history = zeros(N,6);
 % time (but very difficult)
 
 for j=1:N-1
-%     j
+    j
     % first compute the control law
     % Comptue the current modified ROE
     [a, e, i, omega, RAAN, M] = ECI2OE_M(state_chief_history(j,:), mu);
@@ -128,24 +130,24 @@ for j=1:N-1
 %         modified_ROE_applied(1) = delta_a_applied;
 
         % From Lippe
-        delta_a_applied = sign(delta_alpha(2)) * min([abs(delta_alpha(2)) / (500e-3 / oe_chief_temp(1)), 200e-3 / oe_chief_temp(1)]);
+        delta_a_applied = sign(delta_alpha(2)) * min([abs(delta_alpha(2)) / (700e-3 / oe_chief_temp(1)), 200e-3 / oe_chief_temp(1)]);
         modified_ROE_applied(1) = delta_a_applied;
     end
 
     delta_alpha_applied = modified_ROE_cur - modified_ROE_applied;
-%     delta_alpha_applied = delta_alpha;
 
     % Don't forget to get rid off the delta lambda before doing the rest
     B = modified_control_matrix(oe_chief_temp(1), sqrt(mu / oe_chief_temp(1)^3), oe_chief_temp(2), nu_chief_temp, oe_chief_temp(4));
     A = zeros(5);
 
     % Computing the optimal location of the out-of-plane maneuver
-    nu_oop_temp = atan2(delta_alpha(6), delta_alpha(5));
-    if cos(nu_oop_temp) <= cos(nu_oop_temp + pi)
-        nu_oop = nu_oop_temp;
-    else
-        nu_oop = nu_oop_temp + pi;
-    end
+%     nu_oop_temp = atan2(delta_alpha(6), delta_alpha(5));
+    nu_oop = wrapToPi(atan2(delta_alpha(6), delta_alpha(5)) - oe_chief_temp(4));
+%     if cos(nu_oop_temp) <= cos(nu_oop_temp + pi)
+%         nu_oop = nu_oop_temp;
+%     else
+%         nu_oop = nu_oop_temp + pi;
+%     end
     delta_nu_oop = pi; % it is what is done for near circular but I can adapt it
 
     % Computing the optimal location for the in-plane maneuver
@@ -166,7 +168,10 @@ for j=1:N-1
 %             nu_ip = nu_ip2;
 %         end
 %         nu_ip = atan2(delta_ey_tild, delta_ex_tild);
-        nu_ip = nu_ip1;
+%         nu_ip = nu_ip1
+        del_ex = oe_deputy_temp(2) * cos(oe_deputy_temp(4)) - oe_chief_temp(2) * cos(oe_chief_temp(4)) - (oe_deputy_IAM(2) * cos(oe_deputy_IAM(4)) - oe_chief_IAM(2) * cos(oe_chief_IAM(4)));
+        del_ey = oe_deputy_temp(2) * sin(oe_deputy_temp(4)) - oe_chief_temp(2) * sin(oe_chief_temp(4)) - (oe_deputy_IAM(2) * sin(oe_deputy_IAM(4)) - oe_chief_IAM(2) * sin(oe_chief_IAM(4)));
+        nu_ip = cast(wrapToPi(inplane_planning(oe_chief_temp(2), oe_chief_temp(4), oe_chief_temp(3), del_ex, del_ey, delta_alpha_applied(6)) - oe_chief_temp(4)), 'double');
     end
 %     nu_ip, nu_chief_temp
     delta_nu_ip = oe_chief_temp(1) * sqrt(mu / oe_chief_temp(1)^3) * sqrt(1-oe_chief_temp(2)^2) / (2 * T_max) * sqrt(mu / (oe_chief_temp(1)^3 * (1-oe_chief_temp(2)^2)^3)) * 1 / (1 + oe_chief_temp(2) * cos(nu_ip))^3 * abs(delta_alpha_applied(1));
@@ -179,6 +184,8 @@ for j=1:N-1
     u = - pinv(B) * (A * [modified_ROE_cur(1); modified_ROE_cur(3:end)'] + P * [delta_alpha_applied(1); delta_alpha_applied(3:end)']);
     % should be 2D because no radial maneuvers 
     u_history(j,:) = u;
+    total_dv(j,1) = sum(abs(u_history(1:j, 1)) * dt * 1e3);
+    total_dv(j,2) = sum(abs(u_history(1:j, 2)) * dt * 1e3);
 
     % Rotate the delta v from RTN to ECI (using deputy's RTN but look at Steindorf's work)
     % RTN unit vectors
@@ -270,6 +277,41 @@ grid on
 ylabel('\deltai_y [m]')
 
 figure
+subplot(3,1,1)
+hold on
+plot(modified_ROE_PPM(2) * a_chief * 1e3, modified_ROE_PPM(1) * a_chief * 1e3, 'ro')
+plot(modified_ROE_history(:,2) * a_chief * 1e3, modified_ROE_history(:,1) * a_chief * 1e3, 'b-')
+plot(modified_ROE_IAM(2) * a_chief * 1e3, modified_ROE_IAM(1) * a_chief * 1e3, 'rx')
+hold off
+grid on
+axis equal
+xlabel('\delta\lambda [m]')
+ylabel('\deltaa [m]')
+
+subplot(3,1,2)
+hold on
+plot(modified_ROE_PPM(3) * a_chief * 1e3, modified_ROE_PPM(4) * a_chief * 1e3, 'ro')
+plot(modified_ROE_history(:,3) * a_chief * 1e3, modified_ROE_history(:,4) * a_chief * 1e3, 'b-')
+plot(modified_ROE_IAM(3) * a_chief * 1e3, modified_ROE_IAM(4) * a_chief * 1e3, 'rx')
+hold off
+grid on
+axis equal
+xlabel("\deltae_x' [m]")
+ylabel("\deltae_y' [m]")
+
+subplot(3,1,3)
+hold on
+plot(modified_ROE_PPM(5) * a_chief * 1e3, modified_ROE_PPM(6) * a_chief * 1e3, 'ro')
+plot(modified_ROE_history(:,5) * a_chief * 1e3, modified_ROE_history(:,6) * a_chief * 1e3, 'b-')
+plot(modified_ROE_IAM(5) * a_chief * 1e3, modified_ROE_IAM(6) * a_chief * 1e3, 'rx')
+hold off
+grid on
+axis equal
+xlabel('\deltai_x [m]')
+ylabel('\deltai_y [m]')
+
+
+figure
 subplot(3,2,1)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,1) * a_chief * 1e3)
 ylabel('\deltaa [m]')
@@ -293,6 +335,17 @@ ylabel('\deltai_x [m]')
 subplot(3,2,6)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,6) * a_chief * 1e3)
 ylabel('\deltai_y [m]')
+
+
+figure
+subplot(2,1,1)
+plot(reconfiguration_tspan(1:end-1) / T_chief, total_dv(:,1) * dt)
+ylabel('\DeltaV_T [m/s]')
+
+subplot(2,1,2)
+plot(reconfiguration_tspan(1:end-1) / T_chief, total_dv(:,2) * dt)
+ylabel('\DeltaV_N [m/s]')
+xlabel('Orbital Periods')
 
 %% Functions
 
@@ -378,6 +431,12 @@ function P = control_gain2(k, N, nu, nu_ip, nu_oop)
     P(4,4) = cos(nu - nu_oop)^N;
     P(5,5) = cos(nu - nu_oop)^N;
     P = P ./ k;
+end
+
+function nu = inplane_planning(e, omega, i, delta_ex, delta_ey, delta_iy)
+    syms x
+    f = tan(x) * (1 + e * sin(omega) / (sin(x) * (2 + e * cos(omega) * cos(x) + e * sin(omega) * sin(x)))) / (1 + e * cos(omega) / (cos(x) * (2 + e * cos(omega) * cos(x) + e * sin(omega) * sin(x)))) - (delta_ey * tan(i) + e * cos(omega) * delta_iy) / (delta_ex * tan(i) - e * sin(omega) * delta_iy);
+    nu = vpasolve(f,x,[0 2 * pi]);
 end
 
 function [nu_ip1, nu_ip2] = inplane_maneuver(delta_ex_tild, delta_ey_tild, e, n)
