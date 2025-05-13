@@ -25,6 +25,33 @@ end
 
 %% Functions
 
+function [nu_ip1, nu_ip2] = inplane_maneuver(delta_ex_tild, delta_ey_tild, e, n)
+    nu_dis = wrapToPi(pi + acos(e));
+    nu_re = wrapToPi(pi - acos(e));
+    phi = atan2(delta_ey_tild, delta_ex_tild); % phase of the eccentricity vector of pseudostate
+
+    if delta_ex_tild * delta_ey_tild > 0
+        if ((nu_dis < phi) && (phi < wrapToPi(pi - nu_dis))) || ((wrapToPi(pi - nu_re) < phi) && (phi < nu_re))
+            range1 = [nu_dis, 2*pi];
+            range2 = [0, nu_re];
+        else
+            range1 = [pi, nu_dis];
+            range2 = [0, nu_re];
+        end
+    elseif delta_ex_tild * delta_ey_tild < 0
+        if ((nu_dis < phi) && (phi < wrapToPi(pi - nu_dis))) || ((wrapToPi(pi - nu_re) < phi) && (phi < nu_re))
+            range1 = [0, nu_re];
+            range2 = [nu_dis, 2*pi];
+        else
+            range1 = [nu_re, pi];
+            range2 = [nu_dis, 2*pi];
+        end
+    end
+    
+    nu_ip1 = wrapToPi(NR((range1(1) + range1(2)) / 2, e, n, delta_ex_tild, delta_ey_tild));
+    nu_ip2 = wrapToPi(NR((range2(1) + range2(2)) / 2, e, n, delta_ex_tild, delta_ey_tild));
+end
+
 function x = f(nu, e, n, delta_ex_des, delta_ey_des)
     delta_v = delta_vt(nu, e, delta_ex_des, delta_ey_des);
     delta_ex_tild = sqrt(1-e^2) / n * (sin(nu) * sqrt(1 - delta_v^2) + ((2+e*cos(nu)) * cos(nu) + e) / (1+e*cos(nu)) * delta_v);
