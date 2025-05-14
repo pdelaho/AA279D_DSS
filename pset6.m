@@ -3,9 +3,7 @@
 close all; clc; clear;
 path_config;
 mu = 398600.435436; % km^3/s^2
-% R_E = 6378; % km
-% J2 = 0.108263e-2;
-T_max = 10e-6 / 340; % maximum along track acceleration
+% T_max = 10e-6 / 340; % maximum along track acceleration
 options = odeset('RelTol', 1e-12, 'AbsTol', 1e-15, 'MaxStep', 100); % options for numerical integration
 
 % Computing the initial modified ROE for the reconfiguration (Perigee Pass
@@ -80,8 +78,8 @@ ROE_IAM = OE2ROE(oe_chief_IAM, oe_deputy_IAM);
 [pos_chief, vel_chief] = OE2ECI(oe_chief_PPM(1), oe_chief_PPM(2), oe_chief_PPM(3), oe_chief_PPM(4), oe_chief_PPM(5), nu_chief_PPM, mu);
 [pos_deputy, vel_deputy] = OE2ECI(oe_deputy_PPM(1), oe_deputy_PPM(2), oe_deputy_PPM(3), oe_deputy_PPM(4), oe_deputy_PPM(5), nu_deputy_PPM, mu);
 
-N = 30000;
-reconfiguration_tspan = linspace(0, 30 * T_chief, N);
+N = 20000;
+reconfiguration_tspan = linspace(0, 20 * T_chief, N);
 dt = reconfiguration_tspan(2) - reconfiguration_tspan(1);
 state_chief_history = zeros(N,6);
 state_chief_history(1,:) = [pos_chief', vel_chief'];
@@ -90,8 +88,9 @@ state_deputy_history = zeros(N,6);
 state_deputy_history(1,:) = [pos_deputy', vel_deputy'];
 
 modified_ROE_history = zeros(N, 6);
-u_history = zeros(N-1, 2);
-total_dv = zeros(N-1,2);
+ROE_history = zeros(N, 6);
+u_history = zeros(N, 2);
+total_dv = zeros(N,2);
 control_tracking_error_history = zeros(N,6);
 
 % Do a first try where you don't control delta_lambda but everything else,
@@ -110,23 +109,27 @@ for j=1:N-1
     nu_deputy_temp = mean2true(M, e);
     modified_ROE_cur = eccentric_ROE(oe_chief_temp, oe_deputy_temp);
     ROE_cur = OE2ROE(oe_chief_temp, oe_deputy_temp);
+    ROE_history(j,:) = ROE_cur;
     modified_ROE_history(j,:) = modified_ROE_cur;
     delta_alpha = modified_ROE_cur - modified_ROE_IAM;
+%     delta_alpha = ROE_cur - ROE_IAM;
     control_tracking_error_history(j,:) = delta_alpha;
 
     % If not controlling delta_lambda, applied = goal
     modified_ROE_applied = modified_ROE_IAM;
+%     modified_ROE_applied = ROE_IAM;
 
     % Controlling delta_lambda
     if abs(delta_alpha(2)) > 1e-6
         % From Lippe
-        delta_a_applied = sign(delta_alpha(2)) * min([abs(delta_alpha(2)) / (700e-3 / oe_chief_temp(1)), 200e-3 / oe_chief_temp(1)]);
+        delta_a_applied = sign(delta_alpha(2)) * min([abs(delta_alpha(2)) / (500e-3 / oe_chief_temp(1)), 100e-3 / oe_chief_temp(1)]);
         modified_ROE_applied(1) = delta_a_applied;
     end
 
     delta_alpha_applied = modified_ROE_cur - modified_ROE_applied;
 
     B = modified_control_matrix(oe_chief_temp(1), sqrt(mu / oe_chief_temp(1)^3), oe_chief_temp(2), nu_chief_temp, oe_chief_temp(4));
+%     B = control_matrix(oe_chief_temp(1), sqrt(mu / oe_chief_temp(1)^3), oe_chief_temp(2), nu_chief_temp, oe_chief_temp(4), oe_chief_temp(3));
     A = zeros(5);
 
     % Computing the optimal location of the out-of-plane maneuver
@@ -145,14 +148,14 @@ for j=1:N-1
         nu_ip = cast(wrapToPi(inplane_planning(oe_chief_temp(2), oe_chief_temp(4), oe_chief_temp(3), del_ex, del_ey, delta_alpha_applied(6)) - oe_chief_temp(4)), 'double');
     end
 
-    P = control_gain(3000, 4, nu_deputy_temp, nu_ip, nu_oop);
+    P = control_gain(3000, 4, nu_deputy_temp, nu_ip, nu_oop); % try different values for N
 
     % Finally computing the control
     u = - pinv(B) * (A * [modified_ROE_cur(1); modified_ROE_cur(3:end)'] + P * [delta_alpha_applied(1); delta_alpha_applied(3:end)']);
     % should be 2D because no radial maneuvers 
-    u_history(j,:) = u;
-    total_dv(j,1) = sum(abs(u_history(1:j, 1)) * dt * 1e3);
-    total_dv(j,2) = sum(abs(u_history(1:j, 2)) * dt * 1e3);
+    u_history(j+1,:) = u; % in km/s^2
+    total_dv(j+1,1) = sum(abs(u_history(1:j, 1)) * dt * 1e3); % in m/s
+    total_dv(j+1,2) = sum(abs(u_history(1:j, 2)) * dt * 1e3);
 
     % Rotate the delta v from RTN to ECI (using deputy's RTN)
     % RTN unit vectors
@@ -180,9 +183,13 @@ oe_chief_temp = [a, e, i, omega, RAAN, M];
 [a, e, i, omega, RAAN, M] = ECI2OE_M(state_deputy_history(end,:), mu);
 oe_deputy_temp = [a, e, i, omega, RAAN, M];
 modified_ROE_cur = eccentric_ROE(oe_chief_temp, oe_deputy_temp);
+ROE_cur = OE2ROE(oe_chief_temp, oe_deputy_temp);
+ROE_history(end,:) = ROE_cur;
 modified_ROE_history(end,:) = modified_ROE_cur;
 control_tracking_error_history(end,:) = modified_ROE_cur - modified_ROE_IAM;
+% control_tracking_error_history(end,:) = ROE_cur - ROE_IAM;
 
+%% Plotting
 
 figure
 subplot(3,2,1)
@@ -211,7 +218,7 @@ plot(reconfiguration_tspan / T_chief, modified_ROE_history(:,3) * a_chief * 1e3,
 plot(reconfiguration_tspan(end) / T_chief, modified_ROE_IAM(3) * a_chief * 1e3, 'rx')
 hold off
 grid on
-ylabel('\deltae_x [m]')
+ylabel("\deltae_x' [m]")
 xlabel('Orbital Periods')
 
 subplot(3,2,2)
@@ -221,7 +228,7 @@ plot(reconfiguration_tspan / T_chief, modified_ROE_history(:,4) * a_chief * 1e3,
 plot(reconfiguration_tspan(end) / T_chief, modified_ROE_IAM(4) * a_chief * 1e3, 'rx')
 hold off
 grid on
-ylabel('\deltae_y [m]')
+ylabel("\deltae_y' [m]")
 
 subplot(3,2,4)
 hold on
@@ -242,6 +249,64 @@ grid on
 ylabel('\deltai_y [m]')
 xlabel('Orbital Periods')
 
+% figure
+% subplot(3,2,1)
+% hold on
+% plot(0, ROE_PPM(1) * a_chief * 1e3, 'ro')
+% plot(reconfiguration_tspan / T_chief, ROE_history(:,1) * a_chief * 1e3, 'b-')
+% plot(reconfiguration_tspan(end) / T_chief, ROE_IAM(1) * a_chief * 1e3, 'rx')
+% hold off
+% legend('Start', 'Maneuvering', 'Target')
+% grid on
+% ylabel('\deltaa [m]')
+% 
+% subplot(3,2,3)
+% hold on
+% plot(0, ROE_PPM(2) * a_chief * 1e3, 'ro')
+% plot(reconfiguration_tspan / T_chief, ROE_history(:,2) * a_chief * 1e3, 'b-')
+% plot(reconfiguration_tspan(end) / T_chief, ROE_IAM(2) * a_chief * 1e3, 'rx')
+% hold off
+% grid on
+% ylabel('\delta\lambda_e [m]')
+% 
+% subplot(3,2,5)
+% hold on
+% plot(0, ROE_PPM(3) * a_chief * 1e3, 'ro')
+% plot(reconfiguration_tspan / T_chief, ROE_history(:,3) * a_chief * 1e3, 'b-')
+% plot(reconfiguration_tspan(end) / T_chief, ROE_IAM(3) * a_chief * 1e3, 'rx')
+% hold off
+% grid on
+% ylabel('\deltae_x [m]')
+% xlabel('Orbital Periods')
+% 
+% subplot(3,2,2)
+% hold on
+% plot(0, ROE_PPM(4) * a_chief * 1e3, 'ro')
+% plot(reconfiguration_tspan / T_chief, ROE_history(:,4) * a_chief * 1e3, 'b-')
+% plot(reconfiguration_tspan(end) / T_chief, ROE_IAM(4) * a_chief * 1e3, 'rx')
+% hold off
+% grid on
+% ylabel('\deltae_y [m]')
+% 
+% subplot(3,2,4)
+% hold on
+% plot(0, ROE_PPM(5) * a_chief * 1e3, 'ro')
+% plot(reconfiguration_tspan / T_chief, ROE_history(:,5) * a_chief * 1e3, 'b-')
+% plot(reconfiguration_tspan(end) / T_chief, ROE_IAM(5) * a_chief * 1e3, 'rx')
+% hold off
+% grid on
+% ylabel('\deltai_x [m]')
+% 
+% subplot(3,2,6)
+% hold on
+% plot(0, ROE_PPM(6) * a_chief * 1e3, 'ro')
+% plot(reconfiguration_tspan / T_chief, ROE_history(:,6) * a_chief * 1e3, 'b-')
+% plot(reconfiguration_tspan(end) / T_chief, ROE_IAM(6) * a_chief * 1e3, 'rx')
+% hold off
+% grid on
+% ylabel('\deltai_y [m]')
+% xlabel('Orbital Periods')
+
 
 figure
 subplot(3,1,1)
@@ -253,7 +318,7 @@ hold off
 grid on
 axis equal
 legend('Start', 'Maneuvering', 'Target')
-xlabel('\delta\lambda [m]')
+xlabel('\delta\lambda_e [m]')
 ylabel('\deltaa [m]')
 
 subplot(3,1,2)
@@ -282,39 +347,39 @@ ylabel('\deltai_y [m]')
 figure
 subplot(3,2,1)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,1) * a_chief * 1e3)
-ylabel('\deltaa [m]')
+ylabel('\Delta\deltaa [m]')
 
 subplot(3,2,3)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,2) * a_chief * 1e3)
-ylabel('\delta\lambda [m]')
+ylabel('\Delta\delta\lambda_e [m]')
 
 subplot(3,2,5)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,3) * a_chief * 1e3)
-ylabel('\deltae_x [m]')
+ylabel("\Delta\deltae_x' [m]")
 xlabel('Orbital Periods')
 
 subplot(3,2,2)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,4) * a_chief * 1e3)
-ylabel('\deltae_y [m]')
+ylabel("\Delta\deltae_y' [m]")
 
 subplot(3,2,4)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,5) * a_chief * 1e3)
-ylabel('\deltai_x [m]')
+ylabel('\Delta\deltai_x [m]')
 
 subplot(3,2,6)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,6) * a_chief * 1e3)
-ylabel('\deltai_y [m]')
+ylabel('\Delta\deltai_y [m]')
 xlabel('Orbital Periods')
 
-
 figure
-subplot(2,1,1)
-plot(reconfiguration_tspan(1:end-1) / T_chief, total_dv(:,1) * dt)
-ylabel('\DeltaV_T [m/s]')
-
-subplot(2,1,2)
-plot(reconfiguration_tspan(1:end-1) / T_chief, total_dv(:,2) * dt)
-ylabel('\DeltaV_N [m/s]')
+hold on
+plot(reconfiguration_tspan / T_chief, total_dv(:,1), 'b-')
+plot(reconfiguration_tspan / T_chief, total_dv(:,2), 'g-')
+plot(reconfiguration_tspan / T_chief, sqrt(total_dv(:,1).^2 + total_dv(:,2).^2), 'r-')
+hold off
+grid on
+legend('\DeltaV_T', '\DeltaV_N', 'Total \DeltaV')
+ylabel('\DeltaV [m/s]')
 xlabel('Orbital Periods')
 
 %% Functions
@@ -379,7 +444,7 @@ end
 function ROE = OE2ROE(oe_chief, oe_deputy)
     ROE = zeros(1, 6);
     ROE(1) = (oe_deputy(1) - oe_chief(1)) / oe_chief(1);
-    ROE(2) = wrapTo2Pi((oe_deputy(6) + oe_deputy(4)) - (oe_chief(6) + oe_chief(4)) + (oe_deputy(5) - oe_chief(5)) * cos(oe_chief(3)));
+    ROE(2) = wrapToPi((oe_deputy(6) + oe_deputy(4)) - (oe_chief(6) + oe_chief(4)) + (oe_deputy(5) - oe_chief(5)) * cos(oe_chief(3)));
     ROE(3) = oe_deputy(2) * cos(oe_deputy(4)) - oe_chief(2) * cos(oe_chief(4));
     ROE(4) = oe_deputy(2) * sin(oe_deputy(4)) - oe_chief(2) * sin(oe_chief(4));
     ROE(5) = oe_deputy(3) - oe_chief(3);
