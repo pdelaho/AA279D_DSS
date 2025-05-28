@@ -168,25 +168,25 @@ end
 figure
 subplot(3,2,1)
 hold on
-plot(tspan / T_chief, history_ROE_gt(:, 1) * a_chief * 1e3)
 plot(tspan / T_chief, history_ROE_filter(:, 1) * a_chief * 1e3)
+plot(tspan / T_chief, history_ROE_gt(:, 1) * a_chief * 1e3)
 hold off
 grid on
-legend('Ground truth', 'Filter estimation')
+legend('Filter estimation', 'Ground truth')
 ylabel('\deltaa [m]')
 
 subplot(3,2,3)
 hold on
-plot(tspan / T_chief, history_ROE_gt(:, 2) * a_chief * 1e3)
 plot(tspan / T_chief, history_ROE_filter(:, 2) * a_chief * 1e3)
+plot(tspan / T_chief, history_ROE_gt(:, 2) * a_chief * 1e3)
 hold off
 grid on
 ylabel('\delta\lambda [m]')
 
 subplot(3,2,5)
 hold on
-plot(tspan / T_chief, history_ROE_gt(:, 3) * a_chief * 1e3)
 plot(tspan / T_chief, history_ROE_filter(:, 3) * a_chief * 1e3)
+plot(tspan / T_chief, history_ROE_gt(:, 3) * a_chief * 1e3)
 hold off
 grid on
 ylabel('\deltae_x [m]')
@@ -194,24 +194,24 @@ xlabel('Orbital Periods')
 
 subplot(3,2,2)
 hold on
-plot(tspan / T_chief, history_ROE_gt(:, 4) * a_chief * 1e3)
 plot(tspan / T_chief, history_ROE_filter(:, 4) * a_chief * 1e3)
+plot(tspan / T_chief, history_ROE_gt(:, 4) * a_chief * 1e3)
 hold off
 grid on
 ylabel('\deltae_y [m]')
 
 subplot(3,2,4)
 hold on
-plot(tspan / T_chief, history_ROE_gt(:, 5) * a_chief * 1e3)
 plot(tspan / T_chief, history_ROE_filter(:, 5) * a_chief * 1e3)
+plot(tspan / T_chief, history_ROE_gt(:, 5) * a_chief * 1e3)
 hold off
 grid on
 ylabel('\deltai_x [m]')
 
 subplot(3,2,6)
 hold on
-plot(tspan / T_chief, history_ROE_gt(:, 6) * a_chief * 1e3)
 plot(tspan / T_chief, history_ROE_filter(:, 6) * a_chief * 1e3)
+plot(tspan / T_chief, history_ROE_gt(:, 6) * a_chief * 1e3)
 hold off
 grid on
 ylabel('\deltai_y [m]')
@@ -321,7 +321,7 @@ plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(1,1)) * 3 * a_chief * 1e3, '
 hold off
 grid on 
 legend('Prefit', 'Postfit', 'Measurement noise (3\sigma)')
-ylabel('\Delta\deltaa [m]')
+ylabel('\deltaa [m]')
 
 subplot(3,2,3)
 hold on
@@ -331,7 +331,7 @@ plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(2,2)) * 3 * a_chief * 1e3, 'k
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(2,2)) * 3 * a_chief * 1e3, 'k-')
 hold off
 grid on 
-ylabel('\Delta\delta\lambda [m]')
+ylabel('\delta\lambda [m]')
 
 subplot(3,2,5)
 hold on
@@ -341,7 +341,7 @@ plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(3,3)) * 3 * a_chief * 1e3, 'k
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(3,3)) * 3 * a_chief * 1e3, 'k-')
 hold off
 grid on 
-ylabel('\Delta\deltae_x [m]')
+ylabel('\deltae_x [m]')
 xlabel('Orbital Periods')
 
 subplot(3,2,2)
@@ -352,7 +352,7 @@ plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(4,4)) * 3 * a_chief * 1e3, 'k
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(4,4)) * 3 * a_chief * 1e3, 'k-')
 hold off
 grid on 
-ylabel('\Delta\deltae_y [m]')
+ylabel('\deltae_y [m]')
 
 subplot(3,2,4)
 hold on
@@ -362,7 +362,7 @@ plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(5,5)) * 3 * a_chief * 1e3, 'k
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(5,5)) * 3 * a_chief * 1e3, 'k-')
 hold off
 grid on 
-ylabel('\Delta\deltai_x [m]')
+ylabel('\deltai_x [m]')
 
 subplot(3,2,6)
 hold on
@@ -372,7 +372,7 @@ plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(6,6)) * 3 * a_chief * 1e3, 'k
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(6,6)) * 3 * a_chief * 1e3, 'k-')
 hold off
 grid on 
-ylabel('\Delta\deltai_y [m]')
+ylabel('\deltai_y [m]')
 xlabel('Orbital Periods')
 
 
