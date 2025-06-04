@@ -3,7 +3,7 @@
 % This is trying with the sensor giving the ROE straight away
 
 close all; clc; clear;
-path_config;
+% path_config;
 mu = 398600.435436; % km^3/s^2
 
 options = odeset('RelTol', 1e-12, 'AbsTol', 1e-15, 'MaxStep', 1); % options for numerical integration
@@ -46,6 +46,7 @@ P_0(3,3) = (1e-9 / (3 * a_chief))^2;
 P_0(4,4) = (1e-9 / (3 * a_chief))^2;
 P_0(5,5) = (7e-10 / (3 * a_chief))^2;
 P_0(6,6) = (5e-10 / (3 * a_chief))^2;
+P_0 = 1e2 * P_0;
 P_0_sqrt = sqrtm(P_0);
 
 Q = zeros(6);
@@ -55,12 +56,14 @@ Q(3,3) = (6e-10 / (3 * a_chief))^2;
 Q(4,4) = (7e-10 / (3 * a_chief))^2;
 Q(5,5) = (3e-10 / (3 * a_chief))^2;
 Q(6,6) = (1e-10 / (3 * a_chief))^2;
+Q = 1e-2 * P_0;
 
 R = eye(6) * (1e-9 / (3 * a_chief))^2;
 R(1,1) = (5e-9 / (3 * a_chief))^2;
 R(2,2) = (5e-8 / (3 * a_chief))^2;
 R(5,5) = (5e-10 / (3 * a_chief))^2;
 R(6,6) = (1e-10 / (3 * a_chief))^2;
+R = R * 1e1;
 
 % Initial conditions (for the filter and ground truth)
 ic = sqrtm(P_0)*randn(6,1) + ROE_PPM';
@@ -70,7 +73,7 @@ ic_ECI = [pos_chief', vel_chief', pos_deputy', vel_deputy'];
 
 rel_pos_gt = pos_deputy - pos_chief;
 rel_vel_gt = vel_deputy - vel_chief;
-rel_posvel_gt_RTN = ECI2RTN([rel_pos_gt', rel_vel_gt'], [pos_chief', vel_chief'], mu);
+% rel_posvel_gt_RTN = ECI2RTN([rel_pos_gt', rel_vel_gt'], [pos_chief', vel_chief'], mu);
 
 oe_deputy_PPM_est = ROE2OE(oe_chief_PPM, ic);
 nu_deputy_PPM_est = mean2true(oe_deputy_PPM_est(6), oe_deputy_PPM_est(2));
@@ -81,8 +84,8 @@ rel_vel_est = vel_deputy_est - vel_chief;
 rel_posvel_est_RTN = ECI2RTN([rel_pos_est', rel_vel_est'], [pos_chief', vel_chief'], mu);
 
 % Simulation of the ground truth
-N = 200000;
-tspan = linspace(0, 20 * T_chief, N);
+N = 100000;
+tspan = linspace(0, 10 * T_chief, N);
 [t_ECI, y_ECI] = ode89(@(t, state) FODE_2sats(t, state, mu), tspan, ic_ECI, options);
 
 % Filter
@@ -101,10 +104,14 @@ history_sqrt_covariance(1, 5) = P_0_sqrt(5,5);
 history_sqrt_covariance(1, 6) = P_0_sqrt(6,6);
 history_prefit = zeros(N-1, 6);
 history_postfit = zeros(N-1, 6);
+% history_rel_posvel_gt = zeros(N, 6);
+% history_rel_posvel_gt(1, :) = rel_posvel_gt_RTN;
+% history_rel_posvel_est = zeros(N, 6);
+% history_rel_posvel_est(1, :) = rel_posvel_est_RTN;
 history_rel_posvel_gt = zeros(N, 6);
-history_rel_posvel_gt(1, :) = rel_posvel_gt_RTN;
+history_rel_posvel_gt(1, :) = [rel_pos_gt', rel_vel_gt'];
 history_rel_posvel_est = zeros(N, 6);
-history_rel_posvel_est(1, :) = rel_posvel_est_RTN;
+history_rel_posvel_est(1, :) = [rel_pos_est', rel_vel_est'];
 
 for j=2:N
     j
@@ -119,7 +126,9 @@ for j=2:N
     rel_vel_gt = y_ECI(j-1, 10:12) - y_ECI(j-1, 4:6);
     rel_posvel_gt_RTN = ECI2RTN([rel_pos_gt, rel_vel_gt], y_ECI(j-1, 1:6), mu);
     history_ROE_gt(j, :) = ROE;
-    history_rel_posvel_gt(j-1, :) = rel_posvel_gt_RTN;
+%     history_rel_posvel_gt(j-1, :) = rel_posvel_gt_RTN;
+    history_rel_posvel_gt(j, :) = [rel_pos_gt, rel_vel_gt];
+
     oe_deputy_est = ROE2OE(oe_chief, prev);
     nu_deputy_est = mean2true(oe_deputy_est(6), oe_deputy_est(2), 1e-12);
     [pos_deputy_est, vel_deputy_est] = OE2ECI(oe_deputy_est(1), oe_deputy_est(2), oe_deputy_est(3), oe_deputy_est(4), oe_deputy_est(5), nu_deputy_est, mu);
@@ -127,7 +136,9 @@ for j=2:N
     rel_pos_est = pos_deputy_est' - y_ECI(j-1, 1:3);
     rel_vel_est = vel_deputy_est' - y_ECI(j-1, 4:6);
     rel_posvel_est_RTN = ECI2RTN([rel_pos_est, rel_vel_est], y_ECI(j-1, 1:6), mu);
-    history_rel_posvel_est(j-1, :) = rel_posvel_est_RTN;
+%     history_rel_posvel_est(j-1, :) = rel_posvel_est_RTN;
+    history_rel_posvel_est(j, :) = [rel_pos_est, rel_vel_est];
+
     span = linspace(tspan(j-1), tspan(j), 2);
 
     % integrating to propagate the state
@@ -432,7 +443,7 @@ end
 function ROE = OE2ROE(oe_chief, oe_deputy)
     ROE = zeros(1, 6);
     ROE(1) = (oe_deputy(1) - oe_chief(1)) / oe_chief(1);
-    ROE(2) = wrapToPi((oe_deputy(6) + oe_deputy(4)) - (oe_chief(6) + oe_chief(4)) + (oe_deputy(5) - oe_chief(5)) * cos(oe_chief(3)));
+    ROE(2) = (oe_deputy(6) + oe_deputy(4)) - (oe_chief(6) + oe_chief(4)) + (oe_deputy(5) - oe_chief(5)) * cos(oe_chief(3));
     ROE(3) = oe_deputy(2) * cos(oe_deputy(4)) - oe_chief(2) * cos(oe_chief(4));
     ROE(4) = oe_deputy(2) * sin(oe_deputy(4)) - oe_chief(2) * sin(oe_chief(4));
     ROE(5) = oe_deputy(3) - oe_chief(3);
