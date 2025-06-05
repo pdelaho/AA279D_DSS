@@ -3,7 +3,7 @@
 % This is trying with the sensor giving the ROE straight away
 
 close all; clc; clear;
-% path_config;
+path_config;
 mu = 398600.435436; % km^3/s^2
 
 options = odeset('RelTol', 1e-12, 'AbsTol', 1e-15, 'MaxStep', 1); % options for numerical integration
@@ -16,7 +16,7 @@ omega_chief = deg2rad(188);
 RAAN_chief = deg2rad(84);
 n_chief = sqrt(mu / a_chief^3);
 T_chief = 2 * pi / n_chief;
-M_chief = n_chief * (14 * 3600 + 49 * 60); % perigee pass mode starts at t=14h49
+M_chief = n_chief * (4 * 3600 + 49 * 60); % perigee pass mode starts at t=14h49
 nu_chief_PPM = mean2true(M_chief, e_chief, 1e-12);
 oe_chief_PPM = [a_chief, e_chief, inc_chief, omega_chief, RAAN_chief, M_chief];
 
@@ -58,10 +58,10 @@ Q(5,5) = (3e-10 / (3 * a_chief))^2;
 Q(6,6) = (1e-10 / (3 * a_chief))^2;
 Q = 1e-2 * P_0;
 
-R = eye(6) * (1e-9 / (3 * a_chief))^2;
-R(1,1) = (5e-9 / (3 * a_chief))^2;
-R(2,2) = (5e-8 / (3 * a_chief))^2;
-R(5,5) = (5e-10 / (3 * a_chief))^2;
+R = eye(6) * (5e-10 / (3 * a_chief))^2;
+R(1,1) = (1e-8 / (3 * a_chief))^2;
+R(2,2) = (1e-7 / (3 * a_chief))^2;
+% R(5,5) = (5e-10 / (3 * a_chief))^2;
 R(6,6) = (1e-10 / (3 * a_chief))^2;
 R = R * 1e1;
 
@@ -84,8 +84,8 @@ rel_vel_est = vel_deputy_est - vel_chief;
 rel_posvel_est_RTN = ECI2RTN([rel_pos_est', rel_vel_est'], [pos_chief', vel_chief'], mu);
 
 % Simulation of the ground truth
-N = 100000;
-tspan = linspace(0, 10 * T_chief, N);
+N = 10000;
+tspan = linspace(0, 1 * T_chief, N);
 [t_ECI, y_ECI] = ode89(@(t, state) FODE_2sats(t, state, mu), tspan, ic_ECI, options);
 
 % Filter
@@ -387,6 +387,7 @@ ylabel('\deltai_y [m]')
 xlabel('Orbital Periods')
 
 
+% Don't forget that this is not in the RTN frame but in ECI for now
 figure
 subplot(3,2,1)
 plot(tspan / T_chief, (history_rel_posvel_gt(:, 1) - history_rel_posvel_est(:, 1)) * 1e3)

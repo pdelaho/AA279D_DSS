@@ -100,7 +100,7 @@ control_tracking_error_history = zeros(N,6);
 for j=1:N-1
     j
     % first compute the control law
-    % Comptue the current modified ROE
+    % Compute the current modified ROE
     [a, e, i, omega, RAAN, M] = ECI2OE_M(state_chief_history(j,:), mu);
     oe_chief_temp = [a, e, i, omega, RAAN, M];
     nu_chief_temp = mean2true(M, e);
