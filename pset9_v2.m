@@ -15,7 +15,7 @@ RAAN_chief = deg2rad(84);
 n_chief = sqrt(mu / a_chief^3);
 T_chief = 2 * pi / n_chief;
 M_chief = n_chief * (4 * 3600 + 49 * 60); % perigee pass mode starts at t=14h49
-nu_chief_PPM = mean2true(M_chief, e_chief, 1e-12);
+nu_chief_PPM = mean2true(M_chief, e_chief, 1e-15);
 oe_chief_PPM = [a_chief, e_chief, inc_chief, omega_chief, RAAN_chief, M_chief];
 
 delta_a = 0;
@@ -31,7 +31,7 @@ RAAN_deputy = RAAN_chief + delta_iy / sin(inc_chief);
 e_deputy = sqrt((delta_ex + e_chief * cos(omega_chief))^2 + (delta_ey + e_chief * sin(omega_chief))^2);
 omega_deputy = atan2(delta_ey + e_chief * sin(omega_chief), delta_ex + e_chief * cos(omega_chief));
 M_deputy = delta_lambda + M_chief + omega_chief - (RAAN_deputy - RAAN_chief) * cos(inc_chief) - omega_deputy;
-nu_deputy_PPM = mean2true(M_deputy, e_deputy, 1e-12);
+nu_deputy_PPM = mean2true(M_deputy, e_deputy, 1e-15);
 oe_deputy_PPM = [a_deputy, e_deputy, inc_deputy, omega_deputy, RAAN_deputy, M_deputy];
 
 ROE_PPM = OE2ROE(oe_chief_PPM, oe_deputy_PPM);
@@ -115,7 +115,7 @@ rel_vel_est = vel_deputy_est - vel_chief;
 
 % Simulation of the ground truth
 N = 10000;
-tspan = linspace(0, 1 * T_chief, N);
+tspan = linspace(0, 0.1 * T_chief, N);
 % [t_ECI, y_ECI] = ode89(@(t, state) FODE_2sats(t, state, mu), tspan, ic_ECI, options);
 
 % Filter
@@ -153,10 +153,12 @@ for j=2:N
 %     [a, e, i, omega, RAAN, M] = ECI2OE_M(y_ECI(j-1, 1:6), mu);
     [a, e, i, omega, RAAN, M] = ECI2OE_M(history_posvel_chief(j-1,:), mu);
     oe_chief = [a, e, i, omega, RAAN, M];
-    nu_chief = mean2true(M, e, 1e-12);
+    nu_chief = mean2true(M, e, 1e-14);
 
     oe_deputy_est = ROE2OE(oe_chief, prev);
-    nu_deputy_est = mean2true(oe_deputy_est(6), oe_deputy_est(2), 1e-12);
+%     oe_deputy_est(2)
+%     oe_deputy_est(6)
+    nu_deputy_est = mean2true(oe_deputy_est(6), oe_deputy_est(2), 1e-14);
 
     % Compute the control law
     modified_ROE_cur = eccentric_ROE(oe_chief, oe_deputy_est);
@@ -203,9 +205,11 @@ for j=2:N
     span = linspace(tspan(j-1), tspan(j), 2);
 
     % integrating to propagate the estimated state
-    [t, y] = ode89(@(t, state) ROE_noJ2(t, state, mu, a_chief, oe_deputy_est(1)), span, prev, options);
-    B = control_matrix(oe_chief(1), sqrt(mu / oe_chief(1)^3), oe_chief(2), nu_chief, oe_chief(4), oe_chief(3));
-    x_pred = y(end, :) + (sqrtm(Q) * randn(6, 1))' + (B * u)';
+    [t, y] = ode89(@(t, state) ROE_noJ2_control(t, state, mu, oe_chief, u / (tspan(j) - tspan(j-1))), span, prev, options);
+%     [t, y] = ode89(@(t, state) ROE_noJ2_control(t, state, mu, oe_chief, [0, 0]), span, prev, options);
+%     B = control_matrix(oe_chief(1), sqrt(mu / oe_chief(1)^3), oe_chief(2), nu_chief, oe_chief(4), oe_chief(3));
+%     B = control_matrix(oe_deputy_est(1), sqrt(mu / oe_deputy_est(1)^3), oe_deputy_est(2), nu_deputy_est, oe_deputy_est(4), oe_deputy_est(3));
+    x_pred = y(end, :) + (sqrtm(Q) * randn(6, 1))'; % + (B * u)';
 
     % using the STM to propagate the covariance
     A = ROE_STM(tspan(j)-tspan(j-1), n_chief);
@@ -226,6 +230,7 @@ for j=2:N
 %     tspan = [reconfiguration_tspan(j), reconfiguration_tspan(j+1)];
     init_cond = [history_posvel_chief(j-1, :), history_posvel_deputy(j-1,:)];
     [t, y] = ode89(@(t, state) FODE_2sats(t, state, mu, delta_v), span, init_cond, options);
+%     [t, y] = ode89(@(t, state) FODE_2sats(t, state, mu, [0; 0; 0]), span, init_cond, options);
     history_posvel_chief(j, :) = y(end, 1:6);
     history_posvel_deputy(j, :) = y(end, 7:12);
 
@@ -274,7 +279,7 @@ for j=2:N
     history_rel_posvel_gt(j, :) = [rel_pos_gt, rel_vel_gt];
 
     oe_deputy_est = ROE2OE(oe_chief, new_state_est);
-    nu_deputy_est = mean2true(oe_deputy_est(6), oe_deputy_est(2), 1e-12);
+    nu_deputy_est = mean2true(oe_deputy_est(6), oe_deputy_est(2), 1e-14);
     [pos_deputy_est, vel_deputy_est] = OE2ECI(oe_deputy_est(1), oe_deputy_est(2), oe_deputy_est(3), oe_deputy_est(4), oe_deputy_est(5), nu_deputy_est, mu);
     
     rel_pos_est = pos_deputy_est' - history_posvel_chief(j, 1:3);
@@ -537,6 +542,40 @@ xlabel('Orbital Periods')
 function statedot = ROE_noJ2(t, state, mu, a_c, a_d)
     statedot = zeros(size(state));
     statedot(2) = sqrt(mu) * (1/sqrt(a_d^3) - 1/sqrt(a_c^3));
+end
+
+function statedot = ROE_noJ2_control(t, state, mu, oe_chief, u)
+    oe_deputy_estimated = ROE2OE(oe_chief, state);
+    a_d = oe_deputy_estimated(1);
+    n_d = sqrt(mu / a_d^3);
+    e_d = oe_deputy_estimated(2);
+    i_d = oe_deputy_estimated(3);
+    omega_d = oe_deputy_estimated(4);
+    RAAN_d = oe_deputy_estimated(5);
+    M_d = oe_deputy_estimated(6);
+    nu_d = mean2true(M_d, e_d, 1e-14);
+    r_d = a_d * (1 - e_d^2) / (1 + e_d * cos(nu_d));
+
+    a_c = oe_chief(1);
+    n_c = sqrt(mu / oe_chief(1)^3);
+    i_c = oe_chief(3);
+
+    % u should be 2-dimensional
+
+    statedot = zeros(size(state));
+    
+%     statedot(1) = 2 * a_d * sqrt(1 - e_d^2) / (n_d * r_d) * u(1);
+%     statedot(2) = (n_d - (1 - e_d^2) / (n_d * a_d * e_d) * (1 + r_d / (a_d * (1 - e_d^2))) * sin(nu_d) * u(1) + (sqrt(1 - e_d^2) / (n_d * a_d * e_d) * (2 + e_d * cos(nu_d)) / (1 + e_d * cos(nu_d)) * sin(nu_d) * u(1) - r_d * cot(i_d) * sin(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2)) * u(2)) - n_c + cos(i_c) * r_d * sin(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2) * sin(i_d)) * u(2)) * a_c;
+%     statedot(3) = (sqrt(1 - e_d^2) / (n_d * a_d^2 * e_d) * (a_d^2 * (1 - e_d^2) / r_d - r_d) * cos(omega_d) * u(1) - e_d * (sqrt(1 - e_d^2) / (n_d * a_d * e_d) * (2 + e_d * cos(nu_d)) / (1 + e_d * cos(nu_d)) * sin(nu_d) * u(1) - r_d * cot(i_d) * sin(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2)) * u(2)) * sin(omega_d)) * a_c;
+%     statedot(4) = (sqrt(1 - e_d^2) / (n_d * a_d^2 * e_d) * (a_d^2 * (1 - e_d^2) / r_d - r_d) * sin(omega_d) * u(1) + e_d * (sqrt(1 - e_d^2) / (n_d * a_d * e_d) * (2 + e_d * cos(nu_d)) / (1 + e_d * cos(nu_d)) * sin(nu_d) * u(1) - r_d * cot(i_d) * sin(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2)) * u(2)) * cos(omega_d)) * a_c;
+%     statedot(5) = a_c * r_d * cos(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2)) * u(2);
+%     statedot(6) = a_c * sin(i_c) * r_d * sin(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2) * sin(i_d)) * u(2);
+    statedot(1) = 2 * a_d * sqrt(1 - e_d^2) / (n_d * r_d) * u(1) / a_c;
+    statedot(2) = (n_d - (1 - e_d^2) / (n_d * a_d * e_d) * (1 + r_d / (a_d * (1 - e_d^2))) * sin(nu_d) * u(1) + (sqrt(1 - e_d^2) / (n_d * a_d * e_d) * (2 + e_d * cos(nu_d)) / (1 + e_d * cos(nu_d)) * sin(nu_d) * u(1) - r_d * cot(i_d) * sin(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2)) * u(2)) - n_c + cos(i_c) * r_d * sin(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2) * sin(i_d)) * u(2));
+    statedot(3) = (sqrt(1 - e_d^2) / (n_d * a_d^2 * e_d) * (a_d^2 * (1 - e_d^2) / r_d - r_d) * cos(omega_d) * u(1) - e_d * (sqrt(1 - e_d^2) / (n_d * a_d * e_d) * (2 + e_d * cos(nu_d)) / (1 + e_d * cos(nu_d)) * sin(nu_d) * u(1) - r_d * cot(i_d) * sin(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2)) * u(2)) * sin(omega_d));
+    statedot(4) = (sqrt(1 - e_d^2) / (n_d * a_d^2 * e_d) * (a_d^2 * (1 - e_d^2) / r_d - r_d) * sin(omega_d) * u(1) + e_d * (sqrt(1 - e_d^2) / (n_d * a_d * e_d) * (2 + e_d * cos(nu_d)) / (1 + e_d * cos(nu_d)) * sin(nu_d) * u(1) - r_d * cot(i_d) * sin(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2)) * u(2)) * cos(omega_d));
+    statedot(5) = r_d * cos(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2)) * u(2);
+    statedot(6) = sin(i_c) * r_d * sin(omega_d + nu_d) / (n_d * a_d^2 * sqrt(1 - e_d^2) * sin(i_d)) * u(2);
 end
 
 % function statedot = FODE_2sats(t, state, mu)
