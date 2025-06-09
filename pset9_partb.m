@@ -1,4 +1,4 @@
-%% Problem 1
+%% Part b
 
 close all; clc; clear;
 path_config;
@@ -18,7 +18,7 @@ RAAN_chief = deg2rad(84);
 n_chief = sqrt(mu / a_chief^3);
 T_chief = 2 * pi / n_chief;
 M_chief = n_chief * (4 * 3600 + 49 * 60); % reconfiguration starts at t=4h49
-nu_chief_PPM = mean2true(M_chief, e_chief);
+nu_chief_PPM = mean2true(M_chief, e_chief, 1e-12);
 oe_chief_PPM = [a_chief, e_chief, inc_chief, omega_chief, RAAN_chief, M_chief];
 
 delta_a = 0;
@@ -34,7 +34,7 @@ RAAN_deputy = RAAN_chief + delta_iy / sin(inc_chief);
 e_deputy = sqrt((delta_ex + e_chief * cos(omega_chief))^2 + (delta_ey + e_chief * sin(omega_chief))^2);
 omega_deputy = atan2(delta_ey + e_chief * sin(omega_chief), delta_ex + e_chief * cos(omega_chief));
 M_deputy = delta_lambda + M_chief + omega_chief - (RAAN_deputy - RAAN_chief) * cos(inc_chief) - omega_deputy;
-nu_deputy_PPM = mean2true(M_deputy, e_deputy);
+nu_deputy_PPM = mean2true(M_deputy, e_deputy, 1e-12);
 oe_deputy_PPM = [a_deputy, e_deputy, inc_deputy, omega_deputy, RAAN_deputy, M_deputy];
 
 modified_ROE_PPM = eccentric_ROE(oe_chief_PPM, oe_deputy_PPM);
@@ -78,8 +78,8 @@ ROE_IAM = OE2ROE(oe_chief_IAM, oe_deputy_IAM);
 [pos_chief, vel_chief] = OE2ECI(oe_chief_PPM(1), oe_chief_PPM(2), oe_chief_PPM(3), oe_chief_PPM(4), oe_chief_PPM(5), nu_chief_PPM, mu);
 [pos_deputy, vel_deputy] = OE2ECI(oe_deputy_PPM(1), oe_deputy_PPM(2), oe_deputy_PPM(3), oe_deputy_PPM(4), oe_deputy_PPM(5), nu_deputy_PPM, mu);
 
-N = 20000;
-reconfiguration_tspan = linspace(0, 20 * T_chief, N);
+N = 20000; % 20000
+reconfiguration_tspan = linspace(0, 20 * T_chief, N); % 20
 dt = reconfiguration_tspan(2) - reconfiguration_tspan(1);
 state_chief_history = zeros(N,6);
 state_chief_history(1,:) = [pos_chief', vel_chief'];
@@ -93,9 +93,14 @@ u_history = zeros(N, 2);
 total_dv = zeros(N,2);
 control_tracking_error_history = zeros(N,6);
 
-% Do a first try where you don't control delta_lambda but everything else,
-% then add the control of delta_lambda, then add the reference governor if
-% time (but very difficult)
+% Measurement noise from the filter
+R_n = eye(6) * (5e-10 / (3 * a_chief))^2;
+R_n(1,1) = (1e-8 / (3 * a_chief))^2;
+R_n(2,2) = (1e-7 / (3 * a_chief))^2;
+R_n(4,4) = (2e-7 / (3 * a_chief))^2;
+R_n(5,5) = (4e-9 / (3 * a_chief))^2;
+R_n(6,6) = (5e-8 / (3 * a_chief))^2;
+R_n = R_n * 1e1;
 
 for j=1:N-1
     j
@@ -103,17 +108,20 @@ for j=1:N-1
     % Compute the current modified ROE
     [a, e, i, omega, RAAN, M] = ECI2OE_M(state_chief_history(j,:), mu);
     oe_chief_temp = [a, e, i, omega, RAAN, M];
-    nu_chief_temp = mean2true(M, e);
+    nu_chief_temp = mean2true(M, e, 1e-12);
     [a, e, i, omega, RAAN, M] = ECI2OE_M(state_deputy_history(j,:), mu);
     oe_deputy_temp = [a, e, i, omega, RAAN, M];
-    nu_deputy_temp = mean2true(M, e);
-    modified_ROE_cur = eccentric_ROE(oe_chief_temp, oe_deputy_temp);
+    nu_deputy_temp = mean2true(M, e, 1e-12);
+%     modified_ROE_cur = eccentric_ROE(oe_chief_temp, oe_deputy_temp);
     ROE_cur = OE2ROE(oe_chief_temp, oe_deputy_temp);
     ROE_history(j,:) = ROE_cur;
+    noisy_ROE = ROE_cur' + sqrtm(R_n) * randn(6, 1);
+    oe_deputy_noisy = ROE2OE(oe_chief_temp, noisy_ROE);
+    modified_ROE_cur = eccentric_ROE(oe_chief_temp, oe_deputy_noisy);
     modified_ROE_history(j,:) = modified_ROE_cur;
     delta_alpha = modified_ROE_cur - modified_ROE_IAM;
-    delta_alpha_nonmod = ROE_cur - ROE_IAM;
-    control_tracking_error_history(j,:) = delta_alpha_nonmod;
+    delta_alpha_ROE = ROE_cur - ROE_IAM;
+    control_tracking_error_history(j,:) = delta_alpha_ROE;
 
     % If not controlling delta_lambda, applied = goal
     modified_ROE_applied = modified_ROE_IAM;
@@ -143,8 +151,8 @@ for j=1:N-1
     elseif delta_ey_tild == 0
         nu_ip = 0;
     else
-        del_ex = oe_deputy_temp(2) * cos(oe_deputy_temp(4)) - oe_chief_temp(2) * cos(oe_chief_temp(4)) - (oe_deputy_IAM(2) * cos(oe_deputy_IAM(4)) - oe_chief_IAM(2) * cos(oe_chief_IAM(4)));
-        del_ey = oe_deputy_temp(2) * sin(oe_deputy_temp(4)) - oe_chief_temp(2) * sin(oe_chief_temp(4)) - (oe_deputy_IAM(2) * sin(oe_deputy_IAM(4)) - oe_chief_IAM(2) * sin(oe_chief_IAM(4)));
+        del_ex = oe_deputy_noisy(2) * cos(oe_deputy_noisy(4)) - oe_chief_temp(2) * cos(oe_chief_temp(4)) - (oe_deputy_IAM(2) * cos(oe_deputy_IAM(4)) - oe_chief_IAM(2) * cos(oe_chief_IAM(4)));
+        del_ey = oe_deputy_noisy(2) * sin(oe_deputy_noisy(4)) - oe_chief_temp(2) * sin(oe_chief_temp(4)) - (oe_deputy_IAM(2) * sin(oe_deputy_IAM(4)) - oe_chief_IAM(2) * sin(oe_chief_IAM(4)));
         nu_ip = cast(wrapToPi(inplane_planning(oe_chief_temp(2), oe_chief_temp(4), oe_chief_temp(3), del_ex, del_ey, delta_alpha_applied(6)) - oe_chief_temp(4)), 'double');
     end
 
@@ -318,7 +326,7 @@ hold off
 grid on
 axis equal
 legend('Start', 'Maneuvering', 'Target')
-xlabel('\delta\lambda [m]')
+xlabel('\delta\lambda_e [m]')
 ylabel('\deltaa [m]')
 
 subplot(3,1,2)
@@ -329,8 +337,8 @@ plot(ROE_IAM(3) * a_chief * 1e3, ROE_IAM(4) * a_chief * 1e3, 'rx')
 hold off
 grid on
 axis equal
-xlabel("\deltae_x [m]")
-ylabel("\deltae_y [m]")
+xlabel("\deltae_x' [m]")
+ylabel("\deltae_y' [m]")
 
 subplot(3,1,3)
 hold on
@@ -351,16 +359,16 @@ ylabel('\Delta\deltaa [m]')
 
 subplot(3,2,3)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,2) * a_chief * 1e3)
-ylabel('\Delta\delta\lambda [m]')
+ylabel('\Delta\delta\lambda_e [m]')
 
 subplot(3,2,5)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,3) * a_chief * 1e3)
-ylabel("\Delta\deltae_x [m]")
+ylabel("\Delta\deltae_x' [m]")
 xlabel('Orbital Periods')
 
 subplot(3,2,2)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,4) * a_chief * 1e3)
-ylabel("\Delta\deltae_y [m]")
+ylabel("\Delta\deltae_y' [m]")
 
 subplot(3,2,4)
 plot(reconfiguration_tspan / T_chief, control_tracking_error_history(:,5) * a_chief * 1e3)
@@ -449,4 +457,14 @@ function ROE = OE2ROE(oe_chief, oe_deputy)
     ROE(4) = oe_deputy(2) * sin(oe_deputy(4)) - oe_chief(2) * sin(oe_chief(4));
     ROE(5) = oe_deputy(3) - oe_chief(3);
     ROE(6) = (oe_deputy(5) - oe_chief(5)) * sin(oe_chief(3));
+end
+
+function oe_deputy = ROE2OE(oe_chief, ROE)
+    oe_deputy = zeros(6,1);
+    oe_deputy(1) = oe_chief(1) + ROE(1) * oe_chief(1);
+    oe_deputy(3) = wrapTo2Pi(oe_chief(3) + ROE(5));
+    oe_deputy(2) = sqrt((ROE(3)+oe_chief(2)*cos(oe_chief(4)))^2 + (ROE(4)+oe_chief(2)*sin(oe_chief(4)))^2);
+    oe_deputy(5) = wrapTo2Pi(ROE(6) / sin(oe_chief(3)) + oe_chief(5));
+    oe_deputy(4) = wrapTo2Pi(atan2(ROE(4)+oe_chief(2)*sin(oe_chief(4)), ROE(3)+oe_chief(2)*cos(oe_chief(4))));
+    oe_deputy(6) = wrapTo2Pi(ROE(2) + oe_chief(6) - oe_deputy(4) + oe_chief(4) - (oe_deputy(5) - oe_chief(5))*cos(oe_chief(3)));
 end

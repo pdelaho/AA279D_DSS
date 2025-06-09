@@ -21,7 +21,7 @@ n_chief = sqrt(mu / a_chief^3);
 T = 2 * pi / n_chief;
 % M_chief = n_chief * (14 * 3600 + 49 * 60);
 M_chief = n_chief * (4 * 3600 + 49 * 60);
-nu_chief_PPM = mean2true(M_chief, e_chief);
+nu_chief_PPM = mean2true(M_chief, e_chief, 1e-12);
 oe_chief_PPM = [a_chief, e_chief, inc_chief, omega_chief, RAAN_chief, M_chief];
 
 delta_a = 0;
@@ -37,7 +37,7 @@ RAAN_deputy = RAAN_chief + delta_iy / sin(inc_chief);
 e_deputy = sqrt((delta_ex + e_chief * cos(omega_chief))^2 + (delta_ey + e_chief * sin(omega_chief))^2);
 omega_deputy = atan2(delta_ey + e_chief * sin(omega_chief), delta_ex + e_chief * cos(omega_chief));
 M_deputy = delta_lambda + M_chief + omega_chief - (RAAN_deputy - RAAN_chief) * cos(inc_chief) - omega_deputy;
-nu_deputy_PPM = mean2true(M_deputy, e_deputy);
+nu_deputy_PPM = mean2true(M_deputy, e_deputy, 1e-12);
 oe_deputy_PPM = [a_deputy, e_deputy, inc_deputy, omega_deputy, RAAN_deputy, M_deputy];
 
 init_ROE_PPM = [delta_a, delta_lambda, delta_ex, delta_ey, delta_ix, delta_iy]';
@@ -76,8 +76,8 @@ for j=1:N
     STM = STM_ROE(tspan(j), n_chief);
     mod_ROE = STM * init_mod_ROE_PPM;
     oe_deputy = ROE2OE_modified(oe_chief, mod_ROE);
-    nu_chief_cur = mean2true(oe_chief(6), oe_chief(2));
-    nu_deputy_cur = mean2true(oe_deputy(6), oe_deputy(2));
+    nu_chief_cur = mean2true(oe_chief(6), oe_chief(2), 1e-12);
+    nu_deputy_cur = mean2true(oe_deputy(6), oe_deputy(2), 1e-12);
     [pos_c, vel_c] = OE2ECI(oe_chief(1), oe_chief(2), oe_chief(3), oe_chief(4), oe_chief(5), nu_chief_cur, mu);
     [pos_d, vel_d] = OE2ECI(oe_deputy(1), oe_deputy(2), oe_deputy(3), oe_deputy(4), oe_deputy(5), nu_deputy_cur, mu);
     rel_state_ECI = [pos_d', vel_d'] - [pos_c', vel_c'];
@@ -266,7 +266,7 @@ end
 
 % Initial conditions for the chief
 M_chief = n_chief * (6 * 3600 + 49 * 60);
-nu_chief_IAM = mean2true(M_chief, e_chief);
+nu_chief_IAM = mean2true(M_chief, e_chief, 1e-12);
 oe_chief_IAM = [a_chief, e_chief, inc_chief, omega_chief, RAAN_chief, M_chief];
 
 % Initial conditions for the deputy
@@ -284,7 +284,7 @@ RAAN_deputy = RAAN_chief + delta_iy / sin(inc_chief);
 e_deputy = sqrt((delta_ex + e_chief * cos(omega_chief))^2 + (delta_ey + e_chief * sin(omega_chief))^2);
 omega_deputy = atan2(delta_ey + e_chief * sin(omega_chief), delta_ex + e_chief * cos(omega_chief));
 M_deputy = delta_lambda + M_chief + omega_chief - (RAAN_deputy - RAAN_chief) * cos(inc_chief) - omega_deputy;
-nu_deputy_IAM = mean2true(M_deputy, e_deputy);
+nu_deputy_IAM = mean2true(M_deputy, e_deputy, 1e-12);
 oe_deputy_IAM = [a_deputy, e_deputy, inc_deputy, omega_deputy, RAAN_deputy, M_deputy];
 
 init_mod_ROE_IAM = OE2ROE_modified(oe_chief_IAM, oe_deputy_IAM)';
@@ -299,24 +299,25 @@ abs(delta_alpha(2)) * n_chief * a_chief * sqrt(1-e_chief^2) / (3*(1+e_chief)*n_c
 norm([delta_ex - init_ROE_PPM(3), delta_ey - init_ROE_PPM(4)]) * n_chief * a_chief * sqrt(1-e_chief^2) / sqrt(3*e_chief^4 - 7 * e_chief^2 + 4)
 
 % Seeting the least squares to solve the control problem
-B_0 = control_matrix(mean2true(oe_chief_IAM(6), e_chief), e_chief, a_chief, n_chief, omega_chief);
+B_0 = control_matrix(mean2true(oe_chief_IAM(6), e_chief, 1e-12), e_chief, a_chief, n_chief, omega_chief);
 STM_f1 = STM_ROE(3600 + 40 * 60, n_chief);
-B_1 = control_matrix(mean2true((5*3600+9*60)*n_chief, e_chief), e_chief, a_chief, n_chief, omega_chief);
+B_1 = control_matrix(mean2true((5*3600+9*60)*n_chief, e_chief, 1e-12), e_chief, a_chief, n_chief, omega_chief);
 STM_f2 = STM_ROE(3600 + 20 * 60, n_chief);
-B_2 = control_matrix(mean2true((5*3600+29*60)*n_chief, e_chief), e_chief, a_chief, n_chief, omega_chief);
+B_2 = control_matrix(mean2true((5*3600+29*60)*n_chief, e_chief, 1e-12), e_chief, a_chief, n_chief, omega_chief);
 STM_f3 = STM_ROE(3600, n_chief);
-B_3 = control_matrix(mean2true((5*3600+49*60)*n_chief, e_chief), e_chief, a_chief, n_chief, omega_chief);
+B_3 = control_matrix(mean2true((5*3600+49*60)*n_chief, e_chief, 1e-12), e_chief, a_chief, n_chief, omega_chief);
 STM_f4 = STM_ROE(40 * 60, n_chief);
-B_4 = control_matrix(mean2true((6*3600+9*60)*n_chief, e_chief), e_chief, a_chief, n_chief, omega_chief);
+B_4 = control_matrix(mean2true((6*3600+9*60)*n_chief, e_chief, 1e-12), e_chief, a_chief, n_chief, omega_chief);
 STM_f5 = STM_ROE(20 * 60, n_chief);
-B_5 = control_matrix(mean2true((6*3600+29*60)*n_chief, e_chief), e_chief, a_chief, n_chief, omega_chief);
+B_5 = control_matrix(mean2true((6*3600+29*60)*n_chief, e_chief, 1e-12), e_chief, a_chief, n_chief, omega_chief);
 STM_f6 = eye(6);
-B_6 = control_matrix(mean2true((6*3600+49*60)*n_chief, e_chief), e_chief, a_chief, n_chief, omega_chief);
+B_6 = control_matrix(mean2true((6*3600+49*60)*n_chief, e_chief, 1e-12), e_chief, a_chief, n_chief, omega_chief);
 
 % super_STM = [STM_f2(:,1), STM_f4(:,1), STM_f2(:,2), STM_f4(:,2), STM_f2(:,3), STM_f4(:,3), STM_f2(:,4), STM_f4(:,4), STM_f2(:,5), STM_f4(:,5), STM_f2(:,6), STM_f4(:,6)];
 % super_control = [STM_f0*B_0, STM_f1*B_1, STM_f2*B_2, STM_f3*B_3, STM_f4*B_4, STM_f5*B_5, STM_f6*B_6];
 super_control = [STM_f0*B_0, STM_f1*B_1, STM_f2*B_2, STM_f3*B_3, STM_f4*B_4, STM_f5*B_5];
-delta_v = (super_control' * super_control)^(-1) * super_control' * delta_alpha; % should be in km/s
+% delta_v = (super_control' * super_control)^(-1) * super_control' * delta_alpha % should be in km/s
+delta_v = pinv(super_control) * delta_alpha % should be in km/s
 
 % Applying the maneuvers
 
