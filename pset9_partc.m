@@ -70,14 +70,23 @@ modified_ROE_IAM = eccentric_ROE(oe_chief_IAM, oe_deputy_IAM);
 ROE_IAM = OE2ROE(oe_chief_IAM, oe_deputy_IAM);
 
 % Defining the noise matrices
+% P_0 = zeros(6);
+% P_0(1,1) = (5e-9 / (3 * a_chief))^2;
+% P_0(2,2) = (5e-8 / (3 * a_chief))^2;
+% P_0(3,3) = (1e-9 / (3 * a_chief))^2;
+% P_0(4,4) = (1e-7 / (3 * a_chief))^2;
+% P_0(5,5) = (3e-9 / (3 * a_chief))^2;
+% P_0(6,6) = (5e-8 / (3 * a_chief))^2;
+% P_0 = 1e2 * P_0;
+% P_0_sqrt = sqrtm(P_0);
 P_0 = zeros(6);
-P_0(1,1) = (5e-9 / (3 * a_chief))^2;
-P_0(2,2) = (5e-8 / (3 * a_chief))^2;
-P_0(3,3) = (1e-9 / (3 * a_chief))^2;
-P_0(4,4) = (1e-7 / (3 * a_chief))^2;
-P_0(5,5) = (3e-9 / (3 * a_chief))^2;
-P_0(6,6) = (5e-8 / (3 * a_chief))^2;
-P_0 = 1e2 * P_0;
+P_0(1,1) = (9e-5 / (3 * a_chief))^2*1e1;
+P_0(2,2) = (2e-6 / (3 * a_chief))^2 * 1e1;
+P_0(3,3) = (1e-7 / (3 * a_chief))^2 * 1e2;
+P_0(4,4) = (6e-5 / (3 * a_chief))^2 * 1e1;
+P_0(5,5) = (4e-7 / (3 * a_chief))^2 * 1e2;
+P_0(6,6) = (7e-7 / (3 * a_chief))^2 * 1e2;
+% P_0 = 1e2 * P_0;
 P_0_sqrt = sqrtm(P_0);
 
 % Q = zeros(6);
@@ -88,21 +97,36 @@ P_0_sqrt = sqrtm(P_0);
 % Q(5,5) = (5e-9 / (3 * a_chief))^2;
 % Q(6,6) = (5e-10 / (3 * a_chief))^2;
 % Q = 1e-2 * P_0;
-Q = zeros(6);
-Q(1,1) = (3e-9 / (3 * a_chief))^2;
-Q(2,2) = (3e-8 / (3 * a_chief))^2;
-Q(3,3) = (6e-10 / (3 * a_chief))^2;
-Q(4,4) = (5e-7 / (3 * a_chief))^2;
-Q(5,5) = (5e-9 / (3 * a_chief))^2;
-Q(6,6) = (5e-8 / (3 * a_chief))^2;
 
+% Q = zeros(6);
+% Q(1,1) = (3e-9 / (3 * a_chief))^2;
+% Q(2,2) = (3e-8 / (3 * a_chief))^2;
+% Q(3,3) = (6e-10 / (3 * a_chief))^2;
+% Q(4,4) = (5e-7 / (3 * a_chief))^2;
+% Q(5,5) = (5e-9 / (3 * a_chief))^2;
+% Q(6,6) = (5e-8 / (3 * a_chief))^2;
+Q = zeros(6);
+Q(1,1) = (1e-4 / (3 * a_chief))^2;
+Q(2,2) = (1e-5 / (3 * a_chief))^2;
+Q(3,3) = (3e-6 / (3 * a_chief))^2;
+Q(4,4) = (4e-4 / (3 * a_chief))^2;
+Q(5,5) = (1e-5 / (3 * a_chief))^2;
+Q(6,6) = (4e-6 / (3 * a_chief))^2;
+
+% R = eye(6) * (5e-10 / (3 * a_chief))^2;
+% R(1,1) = (1e-8 / (3 * a_chief))^2;
+% R(2,2) = (1e-7 / (3 * a_chief))^2;
+% R(4,4) = (2e-7 / (3 * a_chief))^2;
+% R(5,5) = (4e-9 / (3 * a_chief))^2;
+% R(6,6) = (5e-8 / (3 * a_chief))^2;
+% R = R * 1e1;
 R = eye(6) * (5e-10 / (3 * a_chief))^2;
-R(1,1) = (1e-8 / (3 * a_chief))^2;
-R(2,2) = (1e-7 / (3 * a_chief))^2;
-R(4,4) = (2e-7 / (3 * a_chief))^2;
-R(5,5) = (4e-9 / (3 * a_chief))^2;
-R(6,6) = (5e-8 / (3 * a_chief))^2;
-R = R * 1e1;
+R(1,1) = (4e-5 / (3 * a_chief))^2 * 1e1;
+R(2,2) = (2e-6 / (3 * a_chief))^2 * 1e1;
+R(3,3) = (3e-7 / (3 * a_chief))^2 * 1e1;
+R(4,4) = (2e-5 / (3 * a_chief))^2 * 1e1;
+R(5,5) = (1e-6 / (3 * a_chief))^2 * 1e1;
+R(6,6) = (8e-7 / (3 * a_chief))^2 * 1e1;
 
 % Initial conditions (for the filter and ground truth)
 ic = sqrtm(P_0) * randn(6,1) + ROE_PPM';
@@ -122,8 +146,9 @@ rel_vel_est = vel_deputy_est - vel_chief;
 % rel_posvel_est_RTN = ECI2RTN([rel_pos_est', rel_vel_est'], [pos_chief', vel_chief'], mu);
 
 % Simulation of the ground truth
-N = 10000;
-tspan = linspace(0, 0.1 * T_chief, N);
+N = 20000; % 200,000
+tspan = linspace(0, 20 * T_chief, N); % 20
+dt = tspan(2) - tspan(1);
 % [t_ECI, y_ECI] = ode89(@(t, state) FODE_2sats(t, state, mu), tspan, ic_ECI, options);
 
 % Filter
@@ -143,12 +168,13 @@ history_sqrt_covariance(1, 6) = P_0_sqrt(6,6);
 history_prefit = zeros(N-1, 6);
 history_postfit = zeros(N-1, 6);
 history_rel_posvel_gt = zeros(N, 6);
-history_rel_posvel_gt(1, :) = [rel_pos_gt', rel_vel_gt'];
+history_rel_posvel_gt(1, :) = [rel_pos_gt', rel_vel_gt']; % put that in RTN
 history_rel_posvel_est = zeros(N, 6);
 history_rel_posvel_est(1, :) = [rel_pos_est', rel_vel_est'];
 control_tracking_error_history = zeros(N, 6);
 control_tracking_error_history(1, :) = ROE_PPM - ROE_IAM;
 deltav_history = zeros(N, 2);
+u_history = zeros(N, 2);
 history_posvel_chief = zeros(N, 6);
 history_posvel_chief(1, :) = [pos_chief', vel_chief'];
 history_posvel_deputy = zeros(N, 6);
@@ -209,7 +235,10 @@ for j=2:N
     u = - pinv(B_mod) * (zeros(5) * [modified_ROE_cur(1); modified_ROE_cur(3:end)'] + G * [delta_alpha_applied(1); delta_alpha_applied(3:end)']);
     u = u .* (tspan(j) - tspan(j-1)); % in km/s
     % should be 2D because no radial maneuvers 
-    deltav_history(j+1,:) = u; % in km/s
+%     deltav_history(j,:) = u; % in km/s
+    u_history(j, :) = u ./ (tspan(j) - tspan(j-1)); % in km/s^2
+    deltav_history(j,1) = sum(abs(u_history(1:j, 1)) * dt * 1e3); % in m/s
+    deltav_history(j,2) = sum(abs(u_history(1:j, 2)) * dt * 1e3);
 
     span = linspace(tspan(j-1), tspan(j), 2);
 
@@ -449,8 +478,8 @@ xlabel('Orbital Periods')
 figure
 subplot(3,2,1)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 1) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 1) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 1) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 1) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(1,1)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(1,1)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -460,8 +489,8 @@ ylabel('\deltaa [m]')
 
 subplot(3,2,3)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 2) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 2) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 2) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 2) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(2,2)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(2,2)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -470,8 +499,8 @@ ylabel('\delta\lambda [m]')
 
 subplot(3,2,5)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 3) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 3) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 3) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 3) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(3,3)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(3,3)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -481,8 +510,8 @@ xlabel('Orbital Periods')
 
 subplot(3,2,2)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 4) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 4) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 4) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 4) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(4,4)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(4,4)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -491,8 +520,8 @@ ylabel('\deltae_y [m]')
 
 subplot(3,2,4)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 5) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 5) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 5) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 5) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(5,5)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(5,5)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -501,8 +530,8 @@ ylabel('\deltai_x [m]')
 
 subplot(3,2,6)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 6) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 6) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 6) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 6) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(6,6)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(6,6)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -545,11 +574,12 @@ grid on
 ylabel('Error along N [m/s]')
 xlabel('Orbital Periods')
 
+
 figure
 subplot(3,2,1)
 hold on
-plot(tspan(1) / T_chief, ROE_PPM(1) * a_chief * 1e3, 'ro')
-plot(tspan / T_chief, control_tracking_error_history(:,1) * a_chief * 1e3, 'b-')
+plot(tspan(1) / T_chief, (ROE_PPM(1)) * a_chief * 1e3, 'ro')
+plot(tspan / T_chief, history_ROE_filter(:,1) * a_chief * 1e3, 'b-')
 plot(tspan(end) / T_chief, ROE_IAM(1) * a_chief * 1e3, 'rx')
 hold off
 grid on
@@ -558,8 +588,8 @@ ylabel('\deltaa [m]')
 
 subplot(3,2,3)
 hold on
-plot(tspan(1) / T_chief, ROE_PPM(2) * a_chief * 1e3, 'ro')
-plot(tspan / T_chief, control_tracking_error_history(:,2) * a_chief * 1e3, 'b-')
+plot(tspan(1) / T_chief, (ROE_PPM(2)) * a_chief * 1e3, 'ro')
+plot(tspan / T_chief, history_ROE_filter(:,2) * a_chief * 1e3, 'b-')
 plot(tspan(end) / T_chief, ROE_IAM(2) * a_chief * 1e3, 'rx')
 hold off
 grid on
@@ -567,17 +597,18 @@ ylabel('\delta\lambda [m]')
 
 subplot(3,2,5)
 hold on
-plot(tspan(1) / T_chief, ROE_PPM(3) * a_chief * 1e3, 'ro')
-plot(tspan / T_chief, control_tracking_error_history(:,3) * a_chief * 1e3, 'b-')
+plot(tspan(1) / T_chief, (ROE_PPM(3)) * a_chief * 1e3, 'ro')
+plot(tspan / T_chief, history_ROE_filter(:,3) * a_chief * 1e3, 'b-')
 plot(tspan(end) / T_chief, ROE_IAM(3) * a_chief * 1e3, 'rx')
 hold off
 grid on
 ylabel('\deltae_x [m]')
+xlabel('Orbital Periods')
 
 subplot(3,2,2)
 hold on
-plot(tspan(1) / T_chief, ROE_PPM(4) * a_chief * 1e3, 'ro')
-plot(tspan / T_chief, control_tracking_error_history(:,4) * a_chief * 1e3, 'b-')
+plot(tspan(1) / T_chief, (ROE_PPM(4)) * a_chief * 1e3, 'ro')
+plot(tspan / T_chief, history_ROE_filter(:,4) * a_chief * 1e3, 'b-')
 plot(tspan(end) / T_chief, ROE_IAM(4) * a_chief * 1e3, 'rx')
 hold off
 grid on
@@ -585,8 +616,8 @@ ylabel('\deltae_y [m]')
 
 subplot(3,2,4)
 hold on
-plot(tspan(1) / T_chief, ROE_PPM(5) * a_chief * 1e3, 'ro')
-plot(tspan / T_chief, control_tracking_error_history(:,5) * a_chief * 1e3, 'b-')
+plot(tspan(1) / T_chief, (ROE_PPM(5)) * a_chief * 1e3, 'ro')
+plot(tspan / T_chief, history_ROE_filter(:,5) * a_chief * 1e3, 'b-')
 plot(tspan(end) / T_chief, ROE_IAM(5) * a_chief * 1e3, 'rx')
 hold off
 grid on
@@ -594,12 +625,95 @@ ylabel('\deltai_x [m]')
 
 subplot(3,2,6)
 hold on
-plot(tspan(1) / T_chief, ROE_PPM(6) * a_chief * 1e3, 'ro')
-plot(tspan / T_chief, control_tracking_error_history(:,6) * a_chief * 1e3, 'b-')
+plot(tspan(1) / T_chief, (ROE_PPM(6)) * a_chief * 1e3, 'ro')
+plot(tspan / T_chief, history_ROE_filter(:,6) * a_chief * 1e3, 'b-')
 plot(tspan(end) / T_chief, ROE_IAM(6) * a_chief * 1e3, 'rx')
 hold off
 grid on
 ylabel('\deltai_y [m]')
+xlabel('Orbital Periods')
+
+
+figure
+subplot(3,1,1)
+hold on
+plot(ROE_PPM(2) * a_chief * 1e3, ROE_PPM(1) * a_chief * 1e3, 'ro')
+plot(history_ROE_filter(:,2) * a_chief * 1e3, history_ROE_filter(:,1) * a_chief * 1e3, 'b-')
+plot(ROE_IAM(2) * a_chief * 1e3, ROE_IAM(1) * a_chief * 1e3, 'rx')
+hold off
+grid on
+axis equal
+legend('Start', 'Maneuvering', 'Target')
+xlabel('\delta\lambda_e [m]')
+ylabel('\deltaa [m]')
+
+subplot(3,1,2)
+hold on
+plot(ROE_PPM(3) * a_chief * 1e3, ROE_PPM(4) * a_chief * 1e3, 'ro')
+plot(history_ROE_filter(:,3) * a_chief * 1e3, history_ROE_filter(:,4) * a_chief * 1e3, 'b-')
+plot(ROE_IAM(3) * a_chief * 1e3, ROE_IAM(4) * a_chief * 1e3, 'rx')
+hold off
+grid on
+axis equal
+xlabel("\deltae_x' [m]")
+ylabel("\deltae_y' [m]")
+
+subplot(3,1,3)
+hold on
+plot(ROE_PPM(5) * a_chief * 1e3, ROE_PPM(6) * a_chief * 1e3, 'ro')
+plot(history_ROE_filter(:,5) * a_chief * 1e3, history_ROE_filter(:,6) * a_chief * 1e3, 'b-')
+plot(ROE_IAM(5) * a_chief * 1e3, ROE_IAM(6) * a_chief * 1e3, 'rx')
+hold off
+grid on
+axis equal
+xlabel('\deltai_x [m]')
+ylabel('\deltai_y [m]')
+
+
+figure
+subplot(3,2,1)
+plot(tspan / T_chief, control_tracking_error_history(:,1) * a_chief * 1e3)
+grid on
+ylabel('\Delta\deltaa [m]')
+
+subplot(3,2,3)
+plot(tspan / T_chief, control_tracking_error_history(:,2) * a_chief * 1e3)
+grid on
+ylabel('\Delta\delta\lambda_e [m]')
+
+subplot(3,2,5)
+plot(tspan / T_chief, control_tracking_error_history(:,3) * a_chief * 1e3)
+grid on
+ylabel("\Delta\deltae_x' [m]")
+xlabel('Orbital Periods')
+
+subplot(3,2,2)
+plot(tspan / T_chief, control_tracking_error_history(:,4) * a_chief * 1e3)
+grid on
+ylabel("\Delta\deltae_y' [m]")
+
+subplot(3,2,4)
+plot(tspan / T_chief, control_tracking_error_history(:,5) * a_chief * 1e3)
+grid on
+ylabel('\Delta\deltai_x [m]')
+
+subplot(3,2,6)
+plot(tspan / T_chief, control_tracking_error_history(:,6) * a_chief * 1e3)
+grid on
+ylabel('\Delta\deltai_y [m]')
+xlabel('Orbital Periods')
+
+
+figure
+hold on
+plot(tspan / T_chief, deltav_history(:,1), 'b-')
+plot(tspan / T_chief, deltav_history(:,2), 'g-')
+plot(tspan / T_chief, sqrt(deltav_history(:,1).^2 + deltav_history(:,2).^2), 'r-')
+hold off
+grid on
+legend('\DeltaV_T', '\DeltaV_N', 'Total \DeltaV')
+ylabel('\DeltaV [m/s]')
+xlabel('Orbital Periods')
 
 %% Functions
 

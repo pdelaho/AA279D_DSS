@@ -115,8 +115,8 @@ rel_vel_est = vel_deputy_est - vel_chief;
 rel_posvel_est_RTN = ECI2RTN([rel_pos_est', rel_vel_est'], [pos_chief', vel_chief'], mu);
 
 % Simulation of the ground truth
-N = 1000; % 200000
-tspan = linspace(0, 1 * T_chief, N); % 20
+N = 20000; % 200000
+tspan = linspace(0, 20 * T_chief, N); % 20
 [t_ECI, y_ECI] = ode89(@(t, state) FODE_2sats(t, state, mu), tspan, ic_ECI, options);
 
 % Filter
@@ -349,8 +349,8 @@ xlabel('Orbital Periods')
 figure
 subplot(3,2,1)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 1) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 1) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 1) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 1) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(1,1)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(1,1)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -360,8 +360,8 @@ ylabel('\deltaa [m]')
 
 subplot(3,2,3)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 2) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 2) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 2) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 2) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(2,2)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(2,2)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -370,8 +370,8 @@ ylabel('\delta\lambda [m]')
 
 subplot(3,2,5)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 3) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 3) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 3) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 3) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(3,3)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(3,3)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -381,8 +381,8 @@ xlabel('Orbital Periods')
 
 subplot(3,2,2)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 4) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 4) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 4) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 4) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(4,4)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(4,4)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -391,8 +391,8 @@ ylabel('\deltae_y [m]')
 
 subplot(3,2,4)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 5) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 5) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 5) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 5) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(5,5)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(5,5)) * 3 * a_chief * 1e3, 'k-')
 hold off
@@ -401,8 +401,8 @@ ylabel('\deltai_x [m]')
 
 subplot(3,2,6)
 hold on
-plot(tspan(2:end) / T_chief, history_prefit(:, 6) * a_chief * 1e3)
-plot(tspan(2:end) / T_chief, history_postfit(:, 6) * a_chief * 1e3)
+scatter(tspan(2:end) / T_chief, history_prefit(:, 6) * a_chief * 1e3, 'filled')
+scatter(tspan(2:end) / T_chief, history_postfit(:, 6) * a_chief * 1e3, 'filled')
 plot(tspan(2:end) / T_chief, ones(N-1, 1) * sqrt(R(6,6)) * 3 * a_chief * 1e3, 'k-')
 plot(tspan(2:end) / T_chief, -ones(N-1, 1) * sqrt(R(6,6)) * 3 * a_chief * 1e3, 'k-')
 hold off

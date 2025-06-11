@@ -78,8 +78,8 @@ ROE_IAM = OE2ROE(oe_chief_IAM, oe_deputy_IAM);
 [pos_chief, vel_chief] = OE2ECI(oe_chief_PPM(1), oe_chief_PPM(2), oe_chief_PPM(3), oe_chief_PPM(4), oe_chief_PPM(5), nu_chief_PPM, mu);
 [pos_deputy, vel_deputy] = OE2ECI(oe_deputy_PPM(1), oe_deputy_PPM(2), oe_deputy_PPM(3), oe_deputy_PPM(4), oe_deputy_PPM(5), nu_deputy_PPM, mu);
 
-N = 20000;
-reconfiguration_tspan = linspace(0, 20 * T_chief, N);
+N = 20000; % 20000
+reconfiguration_tspan = linspace(0, 20 * T_chief, N); % 20
 dt = reconfiguration_tspan(2) - reconfiguration_tspan(1);
 state_chief_history = zeros(N,6);
 state_chief_history(1,:) = [pos_chief', vel_chief'];
@@ -154,8 +154,8 @@ for j=1:N-1
     u = - pinv(B) * (A * [modified_ROE_cur(1); modified_ROE_cur(3:end)'] + P * [delta_alpha_applied(1); delta_alpha_applied(3:end)']);
     % should be 2D because no radial maneuvers 
     u_history(j+1,:) = u; % in km/s^2
-    total_dv(j+1,1) = sum(abs(u_history(1:j, 1)) * dt * 1e3); % in m/s
-    total_dv(j+1,2) = sum(abs(u_history(1:j, 2)) * dt * 1e3);
+    total_dv(j+1,1) = sum(abs(u_history(1:j+1, 1)) * dt * 1e3); % in m/s
+    total_dv(j+1,2) = sum(abs(u_history(1:j+1, 2)) * dt * 1e3);
 
     % Rotate the delta v from RTN to ECI (using deputy's RTN)
     % RTN unit vectors

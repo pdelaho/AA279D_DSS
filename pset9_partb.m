@@ -94,13 +94,20 @@ total_dv = zeros(N,2);
 control_tracking_error_history = zeros(N,6);
 
 % Measurement noise from the filter
+% R_n = eye(6) * (5e-10 / (3 * a_chief))^2;
+% R_n(1,1) = (1e-8 / (3 * a_chief))^2;
+% R_n(2,2) = (1e-7 / (3 * a_chief))^2;
+% R_n(4,4) = (2e-7 / (3 * a_chief))^2;
+% R_n(5,5) = (4e-9 / (3 * a_chief))^2;
+% R_n(6,6) = (5e-8 / (3 * a_chief))^2;
+% R_n = R_n * 1e1;
 R_n = eye(6) * (5e-10 / (3 * a_chief))^2;
-R_n(1,1) = (1e-8 / (3 * a_chief))^2;
-R_n(2,2) = (1e-7 / (3 * a_chief))^2;
-R_n(4,4) = (2e-7 / (3 * a_chief))^2;
-R_n(5,5) = (4e-9 / (3 * a_chief))^2;
-R_n(6,6) = (5e-8 / (3 * a_chief))^2;
-R_n = R_n * 1e1;
+R_n(1,1) = (4e-5 / (3 * a_chief))^2 * 1e1;
+R_n(2,2) = (2e-6 / (3 * a_chief))^2 * 1e1;
+R_n(3,3) = (3e-7 / (3 * a_chief))^2 * 1e1;
+R_n(4,4) = (2e-5 / (3 * a_chief))^2 * 1e1;
+R_n(5,5) = (1e-6 / (3 * a_chief))^2 * 1e1;
+R_n(6,6) = (8e-7 / (3 * a_chief))^2 * 1e1;
 
 for j=1:N-1
     j
