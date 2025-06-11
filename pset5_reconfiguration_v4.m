@@ -169,7 +169,7 @@ subplot(3,2,1)
 hold on
 plot(t_01(1) / T_chief, ROE_PPM(1) * a_chief * 1e3, 'ro')
 plot(t_56(end) / T_chief, ROE_IAM(1) * a_chief * 1e3, 'rx')
-plot(t_01 / T_chief, ROE_01(:,1) * a_chief * 1e3, 'b-')
+plot(t_01 / T_chief, ROE_01(:,1) * a_chief * 1e3, 'b')
 plot(t_12 / T_chief, ROE_12(:,1) * a_chief * 1e3, 'b-')
 plot(t_23 / T_chief, ROE_23(:,1) * a_chief * 1e3, 'b-')
 plot(t_34 / T_chief, ROE_34(:,1) * a_chief * 1e3, 'b-')
@@ -336,6 +336,54 @@ plot(t_56 / T_chief, (ROE_56(:,6) - ROE_IAM(6)) * a_chief * 1e3, 'b-')
 hold off
 grid on
 ylabel('\deltaa [m]')
+
+figure
+subplot(3,1,1)
+hold on
+plot(ROE_PPM(2) * a_chief * 1e3, ROE_PPM(1) * a_chief * 1e3, 'ro', 'LineWidth', 2)
+plot(ROE_IAM(2) * a_chief * 1e3, ROE_IAM(1) * a_chief * 1e3, 'rx', 'LineWidth', 2)
+plot(ROE_01(:, 2) * a_chief * 1e3, ROE_01(:, 1) * a_chief * 1e3, 'b-')
+plot(ROE_12(:, 2) * a_chief * 1e3, ROE_12(:, 1) * a_chief * 1e3, 'b-')
+plot(ROE_23(:, 2) * a_chief * 1e3, ROE_23(:, 1) * a_chief * 1e3, 'b-')
+plot(ROE_34(:, 2) * a_chief * 1e3, ROE_34(:, 1) * a_chief * 1e3, 'b')
+plot(ROE_45(:, 2) * a_chief * 1e3, ROE_45(:, 1) * a_chief * 1e3, 'b')
+plot(ROE_56(:, 2) * a_chief * 1e3, ROE_56(:, 1) * a_chief * 1e3, 'b')
+hold off
+grid on
+ylabel('\deltaa [m]')
+xlabel('\delta\lambda [m]')
+legend('Start', 'Target', 'Maneuvering')
+
+subplot(3,1,2)
+hold on
+plot(ROE_PPM(3) * a_chief * 1e3, ROE_PPM(4) * a_chief * 1e3, 'ro', 'LineWidth', 2)
+plot(ROE_IAM(3) * a_chief * 1e3, ROE_IAM(4) * a_chief * 1e3, 'rx', 'LineWidth', 2)
+scatter(ROE_01(:, 3) * a_chief * 1e3, ROE_01(:, 4) * a_chief * 1e3, 'b', 'filled')
+scatter(ROE_12(:, 3) * a_chief * 1e3, ROE_12(:, 4) * a_chief * 1e3, 'b', 'filled')
+scatter(ROE_23(:, 3) * a_chief * 1e3, ROE_23(:, 4) * a_chief * 1e3, 'b', 'filled')
+scatter(ROE_34(:, 3) * a_chief * 1e3, ROE_34(:, 4) * a_chief * 1e3, 'b', 'filled')
+scatter(ROE_45(:, 3) * a_chief * 1e3, ROE_45(:, 4) * a_chief * 1e3, 'b', 'filled')
+scatter(ROE_56(:, 3) * a_chief * 1e3, ROE_56(:, 4) * a_chief * 1e3, 'b', 'filled')
+hold off
+grid on
+ylabel('\deltae_x [m]')
+xlabel('\deltae_y [m]')
+
+subplot(3,1,3)
+hold on
+plot(ROE_PPM(5) * a_chief * 1e3, ROE_PPM(6) * a_chief * 1e3, 'ro', 'LineWidth', 2)
+plot(ROE_IAM(5) * a_chief * 1e3, ROE_IAM(6) * a_chief * 1e3, 'rx', 'LineWidth', 2)
+scatter(ROE_01(:, 5) * a_chief * 1e3, ROE_01(:, 6) * a_chief * 1e3, 'b', 'filled')
+scatter(ROE_12(:, 5) * a_chief * 1e3, ROE_12(:, 6) * a_chief * 1e3, 'b', 'filled')
+scatter(ROE_23(:, 5) * a_chief * 1e3, ROE_23(:, 6) * a_chief * 1e3, 'b', 'filled')
+scatter(ROE_34(:, 5) * a_chief * 1e3, ROE_34(:, 6) * a_chief * 1e3, 'b', 'filled')
+scatter(ROE_45(:, 5) * a_chief * 1e3, ROE_45(:, 6) * a_chief * 1e3, 'b', 'filled')
+scatter(ROE_56(:, 5) * a_chief * 1e3, ROE_56(:, 6) * a_chief * 1e3, 'b', 'filled')
+hold off
+grid on
+ylabel('\deltai_x [m]')
+xlabel('\deltai_y [m]')
+
 
 %% Functions
 
